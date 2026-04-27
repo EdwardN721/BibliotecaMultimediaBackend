@@ -1,20 +1,15 @@
-using BibliotecaMultimedia.Domain.Models;
-using BibliotecaMultimedia.Infrastructure.Interceptors;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using BibliotecaMultimedia.Domain.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace BibliotecaMultimedia.Infrastructure.Persistence;
 
-public class AppDbContext : IdentityDbContext
+// Forzar que los IDs de Identity sean Guid
+public class AppDbContext : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>
 {
-    private readonly UserSessionInterceptor _sessionInterceptor;
-
-    public AppDbContext(
-        DbContextOptions<AppDbContext> options,
-        UserSessionInterceptor sessionInterceptor) : base(options)
-    {
-        _sessionInterceptor = sessionInterceptor;
-    }
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {}
 
     public DbSet<Item> Items => Set<Item>();
     public DbSet<Creator> Creators => Set<Creator>();
@@ -24,18 +19,11 @@ public class AppDbContext : IdentityDbContext
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Genre> Genres => Set<Genre>();
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        // Agregamos nuestro interceptor a la cadena de ejecución
-        optionsBuilder.AddInterceptors(_sessionInterceptor);
-        base.OnConfiguring(optionsBuilder);
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        base.OnModelCreating(modelBuilder); 
         
-        // Esto busca automáticamente todas las clases que implementen IEntityTypeConfiguration en este proyecto
+        // Esto busca automáticamente todas las clases que implementen IEntityTypeConfiguration en el proyecto
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
