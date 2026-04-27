@@ -1,2 +1,8 @@
 .idea/*
 .vscode/*
+
+# Ignorar archivos de compilación
+bin/
+obj/
+
+BibliotecaMultimedia.API/appsettings.json
