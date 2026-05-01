@@ -41,7 +41,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             problemDetails.Detail = identityException.Message;
             problemDetails.Extensions["errors"] = identityException.Errors; // Inyectamos el diccionario de errores de Identity
         }
-        else if (exception is UnauthorizedAppException unauthorizedException) 
+        else if (exception is UnauthorizedAppException unauthorizedException)
         {
             httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
             problemDetails.Title = "No Autorizado";
