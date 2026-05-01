@@ -7,9 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="DTOs\Peticion\" />
-      <Folder Include="DTOs\Respuesta\" />
-      <Folder Include="Mappers\" />
+      <PackageReference Include="FluentValidation" Version="12.1.1" />
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BibliotecaMultimedia.Domain\BibliotecaMultimedia.Domain.csproj" />
     </ItemGroup>
 
 </Project>

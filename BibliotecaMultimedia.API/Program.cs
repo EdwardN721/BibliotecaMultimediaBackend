@@ -5,6 +5,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+// Agregar middleware
+builder.Services.AddGlobalException();
+
+// Agregar Configuracion de Identity
+builder.Services.AddIdentityServices();
+
 // Agregar Swagger
 builder.Services.AddSwaggerService();
 
@@ -12,8 +18,14 @@ builder.Services.AddSwaggerService();
 builder.Services.AddInterceptors();
 builder.Services.AddDbPostgres(builder.Configuration);
 
+// Agregar Validators
+builder.Services.AddValidations();
+
 // Agregar Repositories
 builder.Services.AddRepositories();
+
+// Agregar Services
+builder.Services.AddServices();
 
 var app = builder.Build();
 
