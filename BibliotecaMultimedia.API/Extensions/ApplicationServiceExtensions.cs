@@ -1,5 +1,3 @@
-using BibliotecaMultimedia.Domain.Interfaces;
-using BibliotecaMultimedia.Infrastructure.Repositoy;
 using Microsoft.OpenApi;
 
 namespace BibliotecaMultimedia.API.Extensions;
@@ -19,11 +17,4 @@ public static class ApplicationServiceExtensions
         
         return services;
     }
-
-    public static IServiceCollection AddServices(this IServiceCollection services)
-    {
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
-        
-        return services;
-    } 
 }

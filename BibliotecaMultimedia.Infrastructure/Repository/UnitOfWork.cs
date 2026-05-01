@@ -3,7 +3,7 @@ using BibliotecaMultimedia.Domain.Models;
 using BibliotecaMultimedia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace BibliotecaMultimedia.Infrastructure.Repositoy;
+namespace BibliotecaMultimedia.Infrastructure.Repository;
 
 public class UnitOfWork : IUnitOfWork
 {

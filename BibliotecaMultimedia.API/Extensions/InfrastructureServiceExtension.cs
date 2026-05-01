@@ -1,5 +1,7 @@
+using BibliotecaMultimedia.Domain.Interfaces;
 using BibliotecaMultimedia.Infrastructure.Interceptors;
 using BibliotecaMultimedia.Infrastructure.Persistence;
+using BibliotecaMultimedia.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace BibliotecaMultimedia.API.Extensions;
@@ -25,4 +27,11 @@ public static class InfrastructureServiceExtension
         
         return services;
     }
+    
+    public static IServiceCollection AddRepositories(this IServiceCollection services)
+    {
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        
+        return services;
+    } 
 }

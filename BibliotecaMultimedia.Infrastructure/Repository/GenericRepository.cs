@@ -4,7 +4,7 @@ using BibliotecaMultimedia.Domain.Models;
 using BibliotecaMultimedia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace BibliotecaMultimedia.Infrastructure.Repositoy;
+namespace BibliotecaMultimedia.Infrastructure.Repository;
 
 public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
 {

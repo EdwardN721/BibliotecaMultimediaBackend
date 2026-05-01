@@ -19,6 +19,8 @@ public class Item : BaseEntity
     public MediaType? MediaType { get; set; }
     public Format? Format { get; set; }
     public Platform? Platform { get; set; }
+    
+    public User? User { get; set; }
 
     public ICollection<ItemCreator> ItemCreators { get; private set; } = new List<ItemCreator>();
     public ICollection<ItemGenre> ItemGenres { get; private set; } = new List<ItemGenre>();

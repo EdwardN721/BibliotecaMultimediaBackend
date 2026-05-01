@@ -12,8 +12,8 @@ builder.Services.AddSwaggerService();
 builder.Services.AddInterceptors();
 builder.Services.AddDbPostgres(builder.Configuration);
 
-// Agregar Services
-builder.Services.AddServices();
+// Agregar Repositories
+builder.Services.AddRepositories();
 
 var app = builder.Build();
 
