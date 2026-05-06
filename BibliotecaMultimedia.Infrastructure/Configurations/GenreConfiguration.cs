@@ -17,7 +17,7 @@ public class GenreConfiguration: IEntityTypeConfiguration<Genre>
             .HasMaxLength(50);
         
         builder.Property(g => g.Description)
-            .HasMaxLength(150);
+            .HasMaxLength(500);
 
         builder.HasIndex(g => g.Name).IsUnique();
     }

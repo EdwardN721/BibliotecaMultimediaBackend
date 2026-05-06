@@ -1,4 +1,5 @@
 using BibliotecaMultimedia.API.Extensions;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +10,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddGlobalException();
 
 // Agregar Configuracion de Identity
-builder.Services.AddIdentityServices();
+builder.Services.AddIdentityServices(builder.Configuration);
 
 // Agregar Swagger
 builder.Services.AddSwaggerService();
@@ -36,8 +37,8 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi(); // Genera el archivo json
+    app.MapScalarApiReference(); // Levanta la nueva UI en /scalar/v1
 }
 
 app.UseHttpsRedirection();

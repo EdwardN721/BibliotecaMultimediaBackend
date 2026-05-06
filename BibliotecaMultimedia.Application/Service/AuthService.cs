@@ -11,6 +11,7 @@ using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.Exceptions;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Usuarios;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Usuarios;
+using BibliotecaMultimedia.Domain.Enums;
 
 namespace BibliotecaMultimedia.Application.Service;
 
@@ -47,12 +48,13 @@ public class AuthService : IAuthService
         }
         
         // Asignar Rol
-        const string defaultRole = "User";
-        if (!await _roleManager.RoleExistsAsync(defaultRole))
+        string roleName = Enum.GetName(typeof(AppRole), AppRole.User)!;
+        
+        if (!await _roleManager.RoleExistsAsync(roleName))
         {
-            await _roleManager.CreateAsync(new IdentityRole<Guid>(defaultRole));
+            await _roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
         }
-        await _userManager.AddToRoleAsync(usuario, defaultRole);
+        await _userManager.AddToRoleAsync(usuario, roleName);
         
         // Generar Token y devolcer
         string token = await GenerateTokenAsync(usuario);

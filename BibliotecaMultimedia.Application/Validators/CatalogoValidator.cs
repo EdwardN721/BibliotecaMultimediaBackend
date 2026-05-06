@@ -13,7 +13,7 @@ public class CatalogoValidator : AbstractValidator<PeticionCrearGeneroDto>
             .MaximumLength(50).WithMessage("El nombre no puede exceder los 50 caracteres.");
 
         RuleFor(x => x.Description)
-            .MaximumLength(150).WithMessage("La descripción no puede exceder los 150 caracteres.")
+            .MaximumLength(500).WithMessage("La descripción no puede exceder los 500 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Description));
     }
 }
@@ -28,7 +28,7 @@ public class ActualizarGeneroDtoValidator : AbstractValidator<PeticionActualizar
             .When(x => !string.IsNullOrEmpty(x.Name));
 
         RuleFor(x => x.Description)
-            .MaximumLength(150).WithMessage("La descripción no puede exceder los 150 caracteres.")
+            .MaximumLength(500).WithMessage("La descripción no puede exceder los 500 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Description));
     }
 }

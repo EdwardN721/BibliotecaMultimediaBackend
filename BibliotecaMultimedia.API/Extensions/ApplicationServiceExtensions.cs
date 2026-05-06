@@ -1,10 +1,10 @@
 using Asp.Versioning;
-using BibliotecaMultimedia.API.Handlers;
-using BibliotecaMultimedia.Application.DTOs.Peticion.Usuarios;
-using BibliotecaMultimedia.Application.Interfaces;
-using BibliotecaMultimedia.Application.Service;
 using FluentValidation;
 using Microsoft.OpenApi;
+using BibliotecaMultimedia.API.Handlers;
+using BibliotecaMultimedia.Application.Service;
+using BibliotecaMultimedia.Application.Interfaces;
+using BibliotecaMultimedia.Application.DTOs.Peticion.Usuarios;
 
 namespace BibliotecaMultimedia.API.Extensions;
 
@@ -12,18 +12,44 @@ public static class ApplicationServiceExtensions
 {
     public static IServiceCollection AddSwaggerService(this IServiceCollection services)
     {
-        services.AddSwaggerGen(c =>
+        // Usamos la API nativa de .NET para generar el documento
+        services.AddOpenApi(options =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo
+            // Así se inyecta la seguridad en la v2 de Microsoft.OpenApi
+            options.AddDocumentTransformer((document, _, _) =>
             {
-                Title = "BibliotecaMultimedia.API",
-                Version = "v1",
+                // 1. Definimos el esquema
+                var scheme = new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    Description = "Ingresa tu token JWT aquí (sin la palabra Bearer)."
+                };
+
+                // 2. ERROR 1 RESUELTO: Ahora exige usar el diccionario con IOpenApiSecurityScheme
+                document.Components ??= new OpenApiComponents();
+                document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+                document.Components.SecuritySchemes["Bearer"] = scheme;
+
+                // 3. ERROR 2 RESUELTO: El diccionario del requerimiento ahora pide explícitamente la clase de referencia
+                var requirement = new OpenApiSecurityRequirement
+                {
+                    // Nota: Si el compilador te marca un pequeño error aquí, cámbialo a: new OpenApiSecuritySchemeReference("Bearer")
+                    [new OpenApiSecuritySchemeReference("Bearer")] = new List<string>() 
+                };
+
+                // 4. ERROR 3 RESUELTO: La propiedad 'SecurityRequirements' fue renombrada a 'Security'
+                document.Security ??= new List<OpenApiSecurityRequirement>();
+                document.Security.Add(requirement);
+
+                return Task.CompletedTask;
             });
         });
-        
+
         return services;
     }
-
+    
     public static IServiceCollection AddValidations(this IServiceCollection services)
     {
         // Busca automáticamente todas las clases que hereden de AbstractValidator 
@@ -36,6 +62,7 @@ public static class ApplicationServiceExtensions
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IGeneroService, GeneroService>();
         
         return services;
     }
