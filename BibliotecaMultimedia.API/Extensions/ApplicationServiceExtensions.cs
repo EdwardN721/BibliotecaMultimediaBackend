@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using BibliotecaMultimedia.API.Handlers;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Usuarios;
 using BibliotecaMultimedia.Application.Interfaces;
@@ -44,6 +45,25 @@ public static class ApplicationServiceExtensions
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
         
+        return services;
+    }
+
+    public static IServiceCollection AddApiVersioningConfig(this IServiceCollection services)
+    {
+        services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1, 0); // Versión por defecto: 1.0
+                options.AssumeDefaultVersionWhenUnspecified = true; // Si no mandan versión, asume la 1.0
+                options.ApiVersionReader = ApiVersionReader.Combine(
+                    new UrlSegmentApiVersionReader(), // Lee la versión de la URL (ej: api/v1/...)
+                    new HeaderApiVersionReader("X-Api-Version") // Lee de los headers
+                );
+            })
+            .AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV";
+                options.SubstituteApiVersionInUrl = true;
+            });
         return services;
     }
 }

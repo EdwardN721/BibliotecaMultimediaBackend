@@ -7,7 +7,7 @@ namespace BibliotecaMultimedia.Application.Exceptions;
 /// </summary>
 public class ValidationAppException : Exception
 {
-    // Un diccionario para agrupar los errores por propiedad (ej. "Email": ["El correo es inválido", "No puede estar vacío"])
+    // Diccionario para agrupar los errores por propiedad (ej. "Email": ["El correo es inválido", "No puede estar vacío"])
     public IDictionary<string, string[]> Errors { get; }
 
     public ValidationAppException(IEnumerable<ValidationFailure> failures) 

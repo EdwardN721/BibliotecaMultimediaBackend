@@ -14,6 +14,9 @@ builder.Services.AddIdentityServices();
 // Agregar Swagger
 builder.Services.AddSwaggerService();
 
+// Agregar Verionamiento
+builder.Services.AddApiVersioningConfig();
+
 // Agregar Postgres e Interceptors
 builder.Services.AddInterceptors();
 builder.Services.AddDbPostgres(builder.Configuration);

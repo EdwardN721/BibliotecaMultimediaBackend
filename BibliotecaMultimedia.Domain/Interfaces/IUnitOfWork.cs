@@ -16,7 +16,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Platform> Plataformas { get; }
     IGenericRepository<Role> Roles { get; }
     
-    Task<int> SaveChangesAsync();
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     // Gestión de Transacciones especificas
     Task BeginTransactionAsync();
     Task CommitTransactionAsync();

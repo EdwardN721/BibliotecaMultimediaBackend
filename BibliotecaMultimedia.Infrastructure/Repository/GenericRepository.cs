@@ -17,17 +17,17 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         _dbSet = _context.Set<T>();
     }
     
-    public async Task<T?> ObtenerPorIdAsync(Guid id)
+    public async Task<T?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.FindAsync(id);
+        return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
     }
 
-    public async Task<IEnumerable<T>> ObtenerTodosAsync()
+    public async Task<IEnumerable<T>> ObtenerTodosAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbSet.AsNoTracking().ToListAsync();
+        return await _dbSet.AsNoTracking().ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> filter,
+    public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default,
         params Expression<Func<T, object>>[] includeProperties)
     {
         IQueryable<T> query = _dbSet.AsNoTracking().Where(filter);
@@ -37,13 +37,14 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
             query = query.Include(includeProperty);
         }
 
-        return await query.ToListAsync();
+        return await query.ToListAsync(cancellationToken);
     }
 
     public async Task<(IEnumerable<T> Registros, int Total)> ObtenerPaginadosAsync(
         Expression<Func<T, bool>>? filtro = null,
         int pageNumber = 1,
         int pageSize = 10,
+        CancellationToken cancellationToken = default,
         params Expression<Func<T, object>>[] includeProperties)
     {
         IQueryable<T> query = _dbSet.AsNoTracking();
@@ -58,18 +59,19 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
             query = query.Include(includeProperty);
         }
 
-        int total = await query.CountAsync();
+        int total = await query.CountAsync(cancellationToken);
 
         var registros = await query
             .OrderByDescending(x => x.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return (registros, total);
     }
 
     public async Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate,
+        CancellationToken cancellationToken = default,
         params Expression<Func<T, object>>[] includeProperties)
     {
         IQueryable<T> query = _dbSet;
@@ -79,12 +81,12 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
             query = query.Include(includeProperty);
         }
 
-        return await query.FirstOrDefaultAsync(predicate);
+        return await query.FirstOrDefaultAsync(predicate, cancellationToken);
     }
 
-    public async Task AgregarAsync(T entity)
+    public async Task AgregarAsync(T entity, CancellationToken cancellationToken = default)
     {
-        await _dbSet.AddAsync(entity);
+        await _dbSet.AddAsync(entity, cancellationToken);
     }
 
     public void Actualizar(T entity)

@@ -1,16 +1,18 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Usuarios;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Usuarios;
 
 
-namespace BibliotecaMultimedia.API.Controllers;
+namespace BibliotecaMultimedia.API.Controllers.V1;
 
 /// <summary>
 /// Controller que administra la autenticacion
 /// </summary>
+[ApiVersion("1.0")]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;

@@ -48,6 +48,13 @@ public class GlobalExceptionHandler : IExceptionHandler
             problemDetails.Status = StatusCodes.Status401Unauthorized;
             problemDetails.Detail = unauthorizedException.Message;
         }
+        else if (exception is NotFoundException notFoundException)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+            problemDetails.Title = "Recurso no encontrado";
+            problemDetails.Status = StatusCodes.Status404NotFound;
+            problemDetails.Detail = notFoundException.Message;
+        }
         else
         {
             // Error genérico para atrapar cosas inesperadas (ej. la base de datos se cayó)
