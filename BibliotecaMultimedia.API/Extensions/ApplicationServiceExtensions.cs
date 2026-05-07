@@ -4,7 +4,7 @@ using Microsoft.OpenApi;
 using BibliotecaMultimedia.API.Handlers;
 using BibliotecaMultimedia.Application.Service;
 using BibliotecaMultimedia.Application.Interfaces;
-using BibliotecaMultimedia.Application.DTOs.Peticion.Usuarios;
+using BibliotecaMultimedia.Application.Validators;
 
 namespace BibliotecaMultimedia.API.Extensions;
 
@@ -53,7 +53,7 @@ public static class ApplicationServiceExtensions
     public static IServiceCollection AddValidations(this IServiceCollection services)
     {
         // Busca automáticamente todas las clases que hereden de AbstractValidator 
-        var applicationAssembly = typeof(PeticionCrearUsuarioDto).Assembly;
+        var applicationAssembly = typeof(UsuarioValidator).Assembly;
         services.AddValidatorsFromAssembly(applicationAssembly);
         
         return services;
