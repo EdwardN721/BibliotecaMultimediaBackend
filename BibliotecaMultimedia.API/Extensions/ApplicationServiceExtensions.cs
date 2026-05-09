@@ -63,6 +63,7 @@ public static class ApplicationServiceExtensions
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IGeneroService, GeneroService>();
+        services.AddScoped<IPlataformaService, PlataformaService>();
         
         return services;
     }
