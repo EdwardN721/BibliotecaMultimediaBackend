@@ -41,6 +41,7 @@ public class GenresController : ControllerBase
     /// <param name="id">Id del genero a buscar</param>
     /// <returns>Devuelve un genero</returns>
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(RespuestaGeneroDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ObtenerGeneroPorId([FromRoute] Guid id)

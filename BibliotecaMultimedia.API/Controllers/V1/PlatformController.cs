@@ -27,6 +27,7 @@ public class PlatformController : ControllerBase
     /// </summary>
     /// <returns>Lista de plataformas</returns>
     [HttpGet]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(IEnumerable<RespuestaPlataformaDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ObtenerTodasPlataformas()
     {
@@ -40,6 +41,7 @@ public class PlatformController : ControllerBase
     /// <param name="id">Id de la plataforma</param>
     /// <returns>Plataforma a buscar</returns>
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(RespuestaPlataformaDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ObtenerPlataformaPorId([FromRoute] Guid id)
