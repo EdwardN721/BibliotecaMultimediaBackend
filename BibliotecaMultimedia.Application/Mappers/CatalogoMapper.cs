@@ -27,7 +27,9 @@ public static class CatalogoMapper
     {
       Id = genre.Id,
       Name = genre.Name,
-      Description = genre.Description
+      Description = genre.Description,
+      CreatedAt = genre.CreatedAt,
+      UpdatedAt = genre.UpdatedAt
     };
   }
 
