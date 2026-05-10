@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 using BibliotecaMultimedia.Domain.Models;
 using BibliotecaMultimedia.Domain.Interfaces;
@@ -5,7 +6,9 @@ using BibliotecaMultimedia.Domain.Exceptions;
 using BibliotecaMultimedia.Application.Mappers;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Catalogos;
+using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Catalogos;
+using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
 
 namespace BibliotecaMultimedia.Application.Service;
 
@@ -18,6 +21,33 @@ public class GeneroService : IGeneroService
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public async Task<RespuestaPaginada<RespuestaGeneroDto>> ObtenerGenerosPaginados(FiltroGenero filtroGenero, CancellationToken cancellationToken = default)
+    {
+        Expression<Func<Genre, bool>>? filtro = null;
+
+        if (!string.IsNullOrWhiteSpace(filtroGenero.TerminoBusqueda))
+        {
+            string termino = filtroGenero.TerminoBusqueda.ToLower();
+            filtro = g => g.Name.ToLower().Contains(termino);
+        }
+
+        (IEnumerable<Genre> registros, int total) = await _unitOfWork.Generos.ObtenerPaginadosAsync(
+            filter: filtro,
+            pageNumber: filtroGenero.PageNumber,
+            pageSize: filtroGenero.PageSize,
+            cancellationToken: cancellationToken);
+        
+        int totalPaginas = (int)Math.Ceiling(total / (double)filtroGenero.PageSize);
+
+        RespuestaPaginada<RespuestaGeneroDto> respuesta = registros
+            .MapToDto()
+            .ToRespuestaPaginada(total, totalPaginas, filtroGenero.PageNumber, filtroGenero.PageSize); 
+        
+        _logger.LogInformation("Genero paginado: Página {Page} de {TotalPages} con {Count} registros", 
+            respuesta.Metadata.PaginaActual, respuesta.Metadata.TotalPaginas, respuesta.Registros.Count());
+        return respuesta;
     }
 
     public async Task<IEnumerable<RespuestaGeneroDto>> ObtenerTodosAsync(CancellationToken cancellationToken = default)

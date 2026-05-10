@@ -1,10 +1,12 @@
 using Asp.Versioning;
-using BibliotecaMultimedia.Application.DTOs.Peticion.MediaType;
-using BibliotecaMultimedia.Application.DTOs.Peticion.Plataformas;
-using BibliotecaMultimedia.Application.DTOs.Respuesta.MediaType;
-using BibliotecaMultimedia.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using BibliotecaMultimedia.Application.Interfaces;
+using BibliotecaMultimedia.Application.DTOs.Peticion.MediaType;
+using BibliotecaMultimedia.Application.DTOs.Respuesta.MediaType;
+using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
+using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 
 namespace BibliotecaMultimedia.API.Controllers.V1;
 
@@ -21,6 +23,28 @@ public class MediaTypeController : ControllerBase
     public MediaTypeController(IMediaTypeService mediaTypeService)
     {
         _mediaTypeService = mediaTypeService ?? throw new ArgumentNullException(nameof(mediaTypeService));
+    }
+    
+    /// <summary>
+    /// Obtener MediaTypes de forma paginada y con filtros
+    /// </summary>
+    /// <param name="filtroMediaType">Filtro para la paginacion</param>
+    /// <param name="cancellation">Token de cancelacion</param>
+    /// <returns>Respuesta páginada.</returns>
+    [HttpGet("paginado")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(RespuestaPaginada<RespuestaMediaTypeDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerPlataformasPaginadas([FromQuery] FiltroMediaType filtroMediaType,
+        CancellationToken cancellation)
+    {
+        RespuestaPaginada<RespuestaMediaTypeDto> resultado = await _mediaTypeService.ObtenerMediaTypePaginado(filtroMediaType, cancellation);
+        
+        var metadataJson = JsonSerializer.Serialize(resultado.Metadata);
+        
+        Response.Headers.Append("Access-Control-Expose-Headers", "X-Pagination");
+        Response.Headers.Append("X-Pagination", metadataJson);
+        
+        return Ok(resultado.Registros);
     }
 
     /// <summary>

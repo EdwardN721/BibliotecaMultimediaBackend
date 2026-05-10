@@ -1,9 +1,12 @@
+using System.Text.Json;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Catalogos;
+using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Catalogos;
+using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
 
 namespace BibliotecaMultimedia.API.Controllers.V1;
 
@@ -20,6 +23,28 @@ public class GenresController : ControllerBase
     public GenresController(IGeneroService generoService)
     {
         _generoService = generoService ?? throw new ArgumentNullException(nameof(generoService));
+    }
+    
+    /// <summary>
+    /// Obtener generos de forma paginada y con filtros
+    /// </summary>
+    /// <param name="filtroGenero">Filtro para la paginacion</param>
+    /// <param name="cancellation">Token de cancelacion</param>
+    /// <returns>Respuesta páginada.</returns>
+    [HttpGet("paginado")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(RespuestaPaginada<RespuestaGeneroDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerGeneroPaginado([FromQuery] FiltroGenero filtroGenero,
+        CancellationToken cancellation)
+    {
+        RespuestaPaginada<RespuestaGeneroDto> resultado = await _generoService.ObtenerGenerosPaginados(filtroGenero, cancellation);
+        
+        var metadataJson = JsonSerializer.Serialize(resultado.Metadata);
+        
+        Response.Headers.Append("Access-Control-Expose-Headers", "X-Pagination");
+        Response.Headers.Append("X-Pagination", metadataJson);
+        
+        return Ok(resultado.Registros);
     }
 
     /// <summary>

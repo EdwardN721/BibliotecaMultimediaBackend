@@ -1,9 +1,12 @@
+using System.Text.Json;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Formatos;
+using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Formatos;
+using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
 
 namespace BibliotecaMultimedia.API.Controllers.V1;
 
@@ -20,6 +23,28 @@ public class FormatController : ControllerBase
     public FormatController(IFormatoService formatoService)
     {
         _formatoService = formatoService ?? throw new ArgumentNullException(nameof(formatoService));
+    }
+    
+    /// <summary>
+    /// Obtener plataformas de forma paginada y con filtros
+    /// </summary>
+    /// <param name="filtroFormato">Filtro para la paginacion</param>
+    /// <param name="cancellation">Token de cancelacion</param>
+    /// <returns>Respuesta páginada.</returns>
+    [HttpGet("paginado")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(RespuestaPaginada<RespuestaFormatoDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerFormatosPaginados([FromQuery] FiltroFormato filtroFormato,
+        CancellationToken cancellation)
+    {
+        RespuestaPaginada<RespuestaFormatoDto> resultado = await _formatoService.ObtenerFormatosPaginados(filtroFormato, cancellation);
+        
+        var metadataJson = JsonSerializer.Serialize(resultado.Metadata);
+        
+        Response.Headers.Append("Access-Control-Expose-Headers", "X-Pagination");
+        Response.Headers.Append("X-Pagination", metadataJson);
+        
+        return Ok(resultado.Registros);
     }
     
     /// <summary>

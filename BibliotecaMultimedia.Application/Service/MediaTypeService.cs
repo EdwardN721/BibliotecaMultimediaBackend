@@ -1,5 +1,9 @@
+using System.Linq.Expressions;
 using BibliotecaMultimedia.Application.DTOs.Peticion.MediaType;
+using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.MediaType;
+using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
+using BibliotecaMultimedia.Application.Exceptions;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.Mappers;
 using BibliotecaMultimedia.Domain.Interfaces;
@@ -17,6 +21,33 @@ public class MediaTypeService : IMediaTypeService
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public async Task<RespuestaPaginada<RespuestaMediaTypeDto>> ObtenerMediaTypePaginado(FiltroMediaType filtroMediaType, CancellationToken cancellation = default)
+    {
+        Expression<Func<MediaType, bool>>? filtro = null;
+
+        if (!string.IsNullOrWhiteSpace(filtroMediaType.TerminoBusqueda))
+        {
+            string termino = filtroMediaType.TerminoBusqueda.ToLower();
+            filtro = m => m.Name.ToLower().Contains(termino);
+        }
+        
+        (IEnumerable<MediaType> registros, int total) = await _unitOfWork.TiposMedia.ObtenerPaginadosAsync(
+            filter: filtro,
+            pageNumber: filtroMediaType.PageNumber,
+            pageSize: filtroMediaType.PageSize,
+            cancellationToken: cancellation);
+        
+        int totalPaginas = (int)Math.Ceiling(total / (double)filtroMediaType.PageSize);
+
+        RespuestaPaginada<RespuestaMediaTypeDto> respuesta = registros
+            .MapToDto()
+            .ToRespuestaPaginada(total, totalPaginas, filtroMediaType.PageNumber, filtroMediaType.PageSize);
+
+        _logger.LogInformation("MediaTypes paginadas: Página {Page} de {TotalPages} con {Count} registros", 
+            respuesta.Metadata.PaginaActual, respuesta.Metadata.TotalPaginas, respuesta.Registros.Count());
+        return respuesta;
     }
 
     public async Task<IEnumerable<RespuestaMediaTypeDto>> ObtenerMediaTypeTodos(CancellationToken cancellationToken = default)
@@ -72,7 +103,7 @@ public class MediaTypeService : IMediaTypeService
         if (mediaType == null)
         {
             _logger.LogWarning("No se encontro el tipo de medio por el Id {id}", id);
-            throw new KeyNotFoundException($"No se encontro el tipo de medio por el Id {id}");
+            throw new NotFoundException($"No se encontro el tipo de medio por el Id {id}");
         }
         return mediaType;
     }

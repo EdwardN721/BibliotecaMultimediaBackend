@@ -1,5 +1,8 @@
+using System.Text.Json;
 using Asp.Versioning;
+using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Plataformas;
+using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Plataformas;
 using BibliotecaMultimedia.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -20,6 +23,28 @@ public class PlatformController : ControllerBase
     public PlatformController(IPlataformaService plataformaService)
     {
         _plataformaService = plataformaService ?? throw new ArgumentNullException(nameof(plataformaService));
+    }
+
+    /// <summary>
+    /// Obtener plataformas de forma paginada y con filtros
+    /// </summary>
+    /// <param name="filtroPlataforma">Filtro para la paginacion</param>
+    /// <param name="cancellation">Token de cancelacion</param>
+    /// <returns>Respuesta páginada.</returns>
+    [HttpGet("paginado")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(RespuestaPaginada<RespuestaPlataformaDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerPlataformasPaginadas([FromQuery] FiltroPlataforma filtroPlataforma,
+        CancellationToken cancellation)
+    {
+        RespuestaPaginada<RespuestaPlataformaDto> resultado = await _plataformaService.ObtenerPlataformasPaginado(filtroPlataforma, cancellation);
+        
+        var metadataJson = JsonSerializer.Serialize(resultado.Metadata);
+        
+        Response.Headers.Append("Access-Control-Expose-Headers", "X-Pagination");
+        Response.Headers.Append("X-Pagination", metadataJson);
+        
+        return Ok(resultado.Registros);
     }
 
     /// <summary>

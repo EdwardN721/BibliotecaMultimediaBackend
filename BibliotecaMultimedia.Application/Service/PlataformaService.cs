@@ -1,4 +1,7 @@
+using System.Linq.Expressions;
+using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Plataformas;
+using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Plataformas;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.Mappers;
@@ -18,6 +21,34 @@ public class PlataformaService : IPlataformaService
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public async Task<RespuestaPaginada<RespuestaPlataformaDto>> ObtenerPlataformasPaginado(FiltroPlataforma filtroPlataforma, CancellationToken cancellationToken = default)
+    {
+        Expression<Func<Platform, bool>>? filtro = null;
+
+        if (!string.IsNullOrWhiteSpace(filtroPlataforma.TerminoBusqueda))
+        {
+            string termino = filtroPlataforma.TerminoBusqueda.ToLower();
+            filtro = p => p.Name.ToLower().Contains(termino);
+        }
+
+        (IEnumerable<Platform> registros, int total) = await _unitOfWork.Plataformas.ObtenerPaginadosAsync(
+            filter: filtro,
+            pageNumber: filtroPlataforma.PageNumber,
+            pageSize: filtroPlataforma.PageSize,
+            cancellationToken: cancellationToken
+        );
+
+        int totalPaginas = (int)Math.Ceiling(total / (double)filtroPlataforma.PageSize);
+        
+        RespuestaPaginada<RespuestaPlataformaDto> respuesta = registros
+            .MapToDto()
+            .ToRespuestaPaginada(total, totalPaginas, filtroPlataforma.PageNumber, filtroPlataforma.PageSize); 
+        
+        _logger.LogInformation("Plataformas paginadas: Página {Page} de {TotalPages} con {Count} registros", 
+            respuesta.Metadata.PaginaActual, respuesta.Metadata.TotalPaginas, respuesta.Registros.Count());
+        return respuesta;
     }
 
     public async Task<IEnumerable<RespuestaPlataformaDto>> ObtenerPlataformas(CancellationToken cancellation = default)
