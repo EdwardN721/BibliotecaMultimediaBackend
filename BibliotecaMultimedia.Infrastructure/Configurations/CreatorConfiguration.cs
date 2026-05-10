@@ -18,6 +18,7 @@ public class CreatorConfiguration: IEntityTypeConfiguration<Creator>
         
         builder.Property(c => c.Bio)
             .HasColumnType("text")
+            .HasMaxLength(1500)
             .HasDefaultValue("Sin Descripción.");
     }
 }
