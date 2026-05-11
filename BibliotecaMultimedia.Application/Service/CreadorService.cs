@@ -30,7 +30,8 @@ public class CreadorService : ICreadorService
         if (!string.IsNullOrWhiteSpace(filtroCreador.TerminoBusqueda))
         {
             string termino = filtroCreador.TerminoBusqueda.ToLower();
-            filtro = c => c.Name.ToLower().Contains(termino);
+            filtro = c => c.Name.ToLower().Contains(termino) || 
+                          (c.Bio != null && c.Bio.ToLower().Contains(termino));
         }
 
         (IEnumerable<Creator> registros, int total) = await _unitOfWork.Creadores.ObtenerPaginadosAsync(

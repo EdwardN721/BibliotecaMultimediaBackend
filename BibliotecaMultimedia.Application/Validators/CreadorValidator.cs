@@ -13,7 +13,7 @@ public class CreadorValidator : AbstractValidator<PeticionCrearCreadorDto>
             .MaximumLength(255).WithMessage("El nombre no puede exceder de 255 caracteres.");
         
         RuleFor(creator => creator.Biografia)
-            .MaximumLength(1500).WithMessage("El nombre no puede exceder de 1500 caracteres.")
+            .MaximumLength(1500).WithMessage("La biogracia no puede exceder de 1500 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Biografia));
     }
 }
@@ -29,7 +29,7 @@ public class ActualizarCreadorValidator : AbstractValidator<PeticionActualizarCr
             .When(x => !string.IsNullOrEmpty(x.Nombre));
         
         RuleFor(creator => creator.Biografia)
-            .MaximumLength(1500).WithMessage("El nombre no puede exceder de 1500 caracteres.")
+            .MaximumLength(1500).WithMessage("La biogracia no puede exceder de 1500 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Biografia));
     }
 }

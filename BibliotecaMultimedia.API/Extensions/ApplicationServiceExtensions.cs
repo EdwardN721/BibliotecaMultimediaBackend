@@ -66,6 +66,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IPlataformaService, PlataformaService>();
         services.AddScoped<IMediaTypeService, MediaTypeService>();
         services.AddScoped<IFormatoService, FormatoService>();
+        services.AddScoped<ICreadorService, CreadorService>();
         
         return services;
     }
