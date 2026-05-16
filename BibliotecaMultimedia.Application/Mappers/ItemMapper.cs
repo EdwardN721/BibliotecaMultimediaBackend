@@ -7,7 +7,7 @@ namespace BibliotecaMultimedia.Application.Mappers;
 
 public static class ItemMapper
 {
-    public static Item MapToEntity(this PeticionCrearITemDto itemDto, Guid currentUserId)
+    public static Item MapToEntity(this PeticionCrearItemDto itemDto, Guid currentUserId)
     {
         return new Item
         {
@@ -29,11 +29,22 @@ public static class ItemMapper
     {
         return new RespuestaItemDto
         {
+            Id = item.Id,
             Title = item.Title,
             ReleaseDate = item.ReleaseDate,
             Rating = item.Rating,
             IsFavorite = item.IsFavorite,
-            Metadata = JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(item.Metadata)),
+            
+            Metadata = item.Metadata != null 
+                ? JsonSerializer.Deserialize<Dictionary<string, object>>(item.Metadata.RootElement.GetRawText()) 
+                : null,
+            
+            MediaType = item.MediaType?.Name ?? string.Empty,
+            Format = item.Format?.Name ?? string.Empty,
+            Platform = item.Platform?.Name,
+            
+            Genres = item.ItemGenres?.Select(ig => ig.Genre?.Name ?? string.Empty).Where(name => !string.IsNullOrEmpty(name)).ToList() ?? new List<string>(),
+            Creators = item.ItemCreators?.Select(ic => ic.Creator?.Name ?? string.Empty).Where(name => !string.IsNullOrEmpty(name)).ToList() ?? new List<string>()
         };
     }
 

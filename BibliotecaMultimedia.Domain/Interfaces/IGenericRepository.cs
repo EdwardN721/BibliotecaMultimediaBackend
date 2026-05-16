@@ -13,6 +13,12 @@ public interface IGenericRepository<T> where T : BaseEntity
         CancellationToken cancellationToken = default,
         params Expression<Func<T, object>>[] includeProperties);
 
+    // Soporta sub-niveles (ThenInclude) usando strings
+    Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate,
+        CancellationToken cancellationToken = default,
+        string? includeProperties = null,
+        bool disableTracking = false);
+
     Task<IEnumerable<T>> FindAsync(
         Expression<Func<T, bool>> predicate,
         CancellationToken cancellationToken = default,

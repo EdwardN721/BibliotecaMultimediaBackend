@@ -83,6 +83,30 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
 
         return await query.FirstOrDefaultAsync(predicate, cancellationToken);
     }
+    
+    // Soporta sub-niveles (ThenInclude) usando strings
+    public async Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate,
+        CancellationToken cancellationToken = default,
+        string? includeProperties = null,
+        bool disableTracking = false)
+    {
+        IQueryable<T> query = _dbSet;
+        
+        if (disableTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        if (!string.IsNullOrWhiteSpace(includeProperties))
+        {
+            foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                query = query.Include(includeProperty.Trim());
+            }
+        }
+
+        return await query.FirstOrDefaultAsync(predicate, cancellationToken);
+    }
 
     public async Task AgregarAsync(T entity, CancellationToken cancellationToken = default)
     {

@@ -2,6 +2,7 @@ namespace BibliotecaMultimedia.Application.DTOs.Respuesta.Items;
 
 public record RespuestaItemDto
 {
+    public Guid Id { get; init; }
     public string Title { get; init; } = string.Empty;
     public DateOnly? ReleaseDate { get; init; }
     public short? Rating { get; init; }

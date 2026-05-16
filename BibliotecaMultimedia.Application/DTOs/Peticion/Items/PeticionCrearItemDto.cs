@@ -1,6 +1,6 @@
 namespace BibliotecaMultimedia.Application.DTOs.Peticion.Items;
 
-public record PeticionCrearITemDto
+public record PeticionCrearItemDto
 {
     public string Title { get; init; } = string.Empty;
     public DateOnly? ReleaseDate { get; init; }

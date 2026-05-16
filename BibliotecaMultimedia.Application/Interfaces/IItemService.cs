@@ -10,7 +10,7 @@ public interface IItemService
     Task<RespuestaPaginada<RespuestaItemDto>> ObtenerItemsPaginado(FiltroItem filtroItem, CancellationToken cancellationToken = default);
     Task<IEnumerable<RespuestaItemDto>> ObtenerItems(CancellationToken cancellationToken = default);
     Task<RespuestaItemDto> ObtenerItemPorId(Guid id, CancellationToken cancellationToken = default);
-    Task<RespuestaItemDto> AgregarItem(PeticionCrearITemDto iTemDto, Guid currentUserId,
+    Task<RespuestaItemDto> AgregarItem(PeticionCrearItemDto itemDto, Guid currentUserId,
         CancellationToken cancellationToken = default);
     Task ActualizarItem(Guid id, PeticionActualizarItemDto itemDto, CancellationToken cancellationToken = default);
     Task EliminarItem(Guid id, CancellationToken cancellationToken = default);

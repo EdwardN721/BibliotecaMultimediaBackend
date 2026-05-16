@@ -60,21 +60,23 @@ public class ItemService : IItemService
 
     public async Task<RespuestaItemDto> ObtenerItemPorId(Guid id, CancellationToken cancellationToken = default)
     {
-        Item item = await ObtenerItem(id, cancellationToken);
+        Item item = await ObtenerItem(id, track: false, cancellationToken);
         
         return item.MapToDto();
     }
 
-    public async Task<RespuestaItemDto> AgregarItem(PeticionCrearITemDto iTemDto, Guid currentUserId ,CancellationToken cancellationToken = default)
+    public async Task<RespuestaItemDto> AgregarItem(PeticionCrearItemDto itemDto, Guid currentUserId ,CancellationToken cancellationToken = default)
     {
-        Item nuevoItem = iTemDto.MapToEntity(currentUserId);
-        foreach (Guid genreId in iTemDto.GenreIds)
+        Item nuevoItem = itemDto.MapToEntity(currentUserId);
+        
+        foreach (Guid genreId in itemDto.GenreIds)
         {
-            nuevoItem.ItemGenres.Add(new ItemGenre
-            {
-                GenreId = genreId,
-                ItemId = default // falta algo, pendiente
-            });
+            nuevoItem.ItemGenres?.Add(new ItemGenre { GenreId = genreId, ItemId = Guid.Empty});
+        }
+        
+        foreach (Guid creatorId in itemDto.CreatorIds)
+        {
+            nuevoItem.ItemCreators?.Add(new ItemCreator { CreatorId = creatorId, ItemId = Guid.Empty, RoleId = Guid.Empty});
         }
         
         await _unitOfWork.Items.AgregarAsync(nuevoItem, cancellationToken);
@@ -86,7 +88,7 @@ public class ItemService : IItemService
 
     public async Task ActualizarItem(Guid id, PeticionActualizarItemDto itemDto, CancellationToken cancellationToken = default)
     {
-        Item item = await ObtenerItem(id, cancellationToken);
+        Item item = await ObtenerItem(id, track: false, cancellationToken);
         
         item.UpadteEntity(itemDto);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -95,7 +97,7 @@ public class ItemService : IItemService
 
     public async Task EliminarItem(Guid id, CancellationToken cancellationToken = default)
     {
-        Item item = await ObtenerItem(id, cancellationToken);
+        Item item = await ObtenerItem(id, track: false, cancellationToken);
         
         _unitOfWork.Items.Eliminar(item);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -105,9 +107,14 @@ public class ItemService : IItemService
     
     #region MetodosPrivados
 
-    private async Task<Item> ObtenerItem(Guid id, CancellationToken cancellationToken = default)
+    private async Task<Item> ObtenerItem(Guid id, bool track = true, CancellationToken cancellationToken = default)
     {
-        Item? item = await _unitOfWork.Items.ObtenerPorIdAsync(id, cancellationToken);
+        Item? item = await _unitOfWork.Items.GetFirstOrDefaultAsync(
+            predicate: i => i.Id == id,
+            cancellationToken: cancellationToken,
+            includeProperties: "MediaType,Format,Platform,ItemGenres.Genre,ItemCreators.Creator",
+            disableTracking: !track
+        );
         if (item == null)
         {
             _logger.LogWarning("No se encontro el item por el Id {id}", id);

@@ -22,7 +22,7 @@ public class Item : BaseEntity
     
     public User? User { get; set; }
 
-    public ICollection<ItemCreator> ItemCreators { get; private set; } = new List<ItemCreator>();
-    public ICollection<ItemGenre> ItemGenres { get; private set; } = new List<ItemGenre>();
-    public ICollection<ItemImage> ItemImages { get; private set; } = new List<ItemImage>();
+    public ICollection<ItemCreator>? ItemCreators { get; private set; } = new List<ItemCreator>();
+    public ICollection<ItemGenre>? ItemGenres { get; private set; } = new List<ItemGenre>();
+    public ICollection<ItemImage>? ItemImages { get; private set; } = new List<ItemImage>();
 }

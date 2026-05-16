@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using BibliotecaMultimedia.Domain.Models;
 
 namespace BibliotecaMultimedia.Domain.Interfaces;
