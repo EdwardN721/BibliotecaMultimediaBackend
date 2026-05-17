@@ -53,7 +53,7 @@ public class CreadorService : ICreadorService
 
     public async Task<IEnumerable<RespuestaCreadorDto>> ObtenerCreadores(CancellationToken cancellation = default)
     {
-        List<Creator> creadores = (await _unitOfWork.Creadores.ObtenerTodosAsync(cancellation)).ToList();
+        List<Creator> creadores = (await _unitOfWork.Creadores.ObtenerTodosAsync(cancellationToken: cancellation)).ToList();
         
         _logger.LogInformation("Creadores encontrados: {Count}", creadores.Count);
         return creadores.MapToDto();

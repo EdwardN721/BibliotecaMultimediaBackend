@@ -52,7 +52,7 @@ public class FormatoService : IFormatoService
 
     public async Task<IEnumerable<RespuestaFormatoDto>> ObtenerFormatos(CancellationToken cancellation = default)
     {
-        List<Format> formatos = (await _unitOfWork.Formatos.ObtenerTodosAsync(cancellation)).ToList();
+        List<Format> formatos = (await _unitOfWork.Formatos.ObtenerTodosAsync(cancellationToken: cancellation)).ToList();
         
         _logger.LogInformation("Total de resultados: {Count}", formatos.Count);
         return formatos.MapToDto();

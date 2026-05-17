@@ -52,7 +52,7 @@ public class MediaTypeService : IMediaTypeService
 
     public async Task<IEnumerable<RespuestaMediaTypeDto>> ObtenerMediaTypeTodos(CancellationToken cancellationToken = default)
     {
-        List<MediaType> mediaTypes = (await _unitOfWork.TiposMedia.ObtenerTodosAsync(cancellationToken)).ToList();
+        List<MediaType> mediaTypes = (await _unitOfWork.TiposMedia.ObtenerTodosAsync(cancellationToken: cancellationToken)).ToList();
         
         _logger.LogInformation("Total de resultados: {Count}", mediaTypes.Count);
         return mediaTypes.MapToDto();

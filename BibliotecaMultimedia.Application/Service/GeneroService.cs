@@ -52,7 +52,7 @@ public class GeneroService : IGeneroService
 
     public async Task<IEnumerable<RespuestaGeneroDto>> ObtenerTodosAsync(CancellationToken cancellationToken = default)
     {
-        List<Genre> genero = (await _unitOfWork.Generos.ObtenerTodosAsync(cancellationToken)).ToList();
+        List<Genre> genero = (await _unitOfWork.Generos.ObtenerTodosAsync(cancellationToken: cancellationToken)).ToList();
         
         _logger.LogInformation("Generos encontrados: {Count}", genero.Count);
         return genero.MapToDto();

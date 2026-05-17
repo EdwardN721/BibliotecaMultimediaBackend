@@ -53,7 +53,7 @@ public class PlataformaService : IPlataformaService
 
     public async Task<IEnumerable<RespuestaPlataformaDto>> ObtenerPlataformas(CancellationToken cancellation = default)
     {
-        List<Platform> plataformas = (await _unitOfWork.Plataformas.ObtenerTodosAsync(cancellation)).ToList();
+        List<Platform> plataformas = (await _unitOfWork.Plataformas.ObtenerTodosAsync(cancellationToken: cancellation)).ToList();
         _logger.LogInformation("Elementos encontrados: {Count}", plataformas.Count);
         return plataformas.MapToDto();
     }

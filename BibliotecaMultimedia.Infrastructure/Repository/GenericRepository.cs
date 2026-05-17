@@ -16,18 +16,28 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         _context = context;
         _dbSet = _context.Set<T>();
     }
-    
+
     public async Task<T?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
     }
 
-    public async Task<IEnumerable<T>> ObtenerTodosAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<T>> ObtenerTodosAsync(string? includeProperties = null,
+        CancellationToken cancellationToken = default)
     {
-        return await _dbSet.AsNoTracking().ToListAsync(cancellationToken);
+        IQueryable<T> query = _dbSet.AsNoTracking();
+
+        if (!string.IsNullOrEmpty(includeProperties))
+        {
+            query = IncluirPropiedades(includeProperties, query);
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default,
+    public async Task<IEnumerable<T>> FindAsync(
+        Expression<Func<T, bool>> filter,
+        CancellationToken cancellationToken = default,
         params Expression<Func<T, object>>[] includeProperties)
     {
         IQueryable<T> query = _dbSet.AsNoTracking().Where(filter);
@@ -45,7 +55,8 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         int pageNumber = 1,
         int pageSize = 10,
         CancellationToken cancellationToken = default,
-        params Expression<Func<T, object>>[] includeProperties)
+        string? includeProperties = null,
+        params Expression<Func<T, object>>[] includes)
     {
         IQueryable<T> query = _dbSet.AsNoTracking();
 
@@ -53,10 +64,15 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         {
             query = query.Where(filtro);
         }
-        
-        foreach (var includeProperty in includeProperties)
+
+        foreach (var includeProperty in includes)
         {
             query = query.Include(includeProperty);
+        }
+
+        if (!string.IsNullOrWhiteSpace(includeProperties))
+        {
+            query = IncluirPropiedades(includeProperties, query);
         }
 
         int total = await query.CountAsync(cancellationToken);
@@ -75,7 +91,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         params Expression<Func<T, object>>[] includeProperties)
     {
         IQueryable<T> query = _dbSet;
-        
+
         foreach (var includeProperty in includeProperties)
         {
             query = query.Include(includeProperty);
@@ -83,7 +99,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
 
         return await query.FirstOrDefaultAsync(predicate, cancellationToken);
     }
-    
+
     // Soporta sub-niveles (ThenInclude) usando strings
     public async Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate,
         CancellationToken cancellationToken = default,
@@ -91,7 +107,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         bool disableTracking = false)
     {
         IQueryable<T> query = _dbSet;
-        
+
         if (disableTracking)
         {
             query = query.AsNoTracking();
@@ -99,10 +115,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
 
         if (!string.IsNullOrWhiteSpace(includeProperties))
         {
-            foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                query = query.Include(includeProperty.Trim());
-            }
+            query = IncluirPropiedades(includeProperties, query);
         }
 
         return await query.FirstOrDefaultAsync(predicate, cancellationToken);
@@ -128,4 +141,18 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
 
         _dbSet.Remove(entity);
     }
+
+    #region MetodosPrivados
+
+    private IQueryable<T> IncluirPropiedades(string propiedades, IQueryable<T> query)
+    {
+        foreach (var propiedad in propiedades.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            query = query.Include(propiedad.Trim());
+        }
+
+        return query;
+    }
+
+    #endregion
 }

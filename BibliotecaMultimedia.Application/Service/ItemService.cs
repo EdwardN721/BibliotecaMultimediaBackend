@@ -37,6 +37,7 @@ public class ItemService : IItemService
             filter: filtro,
             pageNumber: filtroItem.PageNumber,
             pageSize: filtroItem.PageSize,
+            includeProperties: "MediaType,Format,Platform,ItemGenres.Genre,ItemCreators.Creator",
             cancellationToken: cancellationToken);
         
         int totalPaginas = (int)Math.Ceiling(total / (double)filtroItem.PageSize);
@@ -52,7 +53,9 @@ public class ItemService : IItemService
 
     public async Task<IEnumerable<RespuestaItemDto>> ObtenerItems(CancellationToken cancellationToken = default)
     {
-        List<Item> items = (await _unitOfWork.Items.ObtenerTodosAsync(cancellationToken)).ToList();
+        List<Item> items = (await _unitOfWork.Items.ObtenerTodosAsync(
+            includeProperties: "MediaType,Format,Platform,ItemGenres.Genre,ItemCreators.Creator",
+            cancellationToken)).ToList();
         
         _logger.LogInformation("Items paginados: {Count}", items.Count);
         return items.MapToDto();
@@ -88,7 +91,7 @@ public class ItemService : IItemService
 
     public async Task ActualizarItem(Guid id, PeticionActualizarItemDto itemDto, CancellationToken cancellationToken = default)
     {
-        Item item = await ObtenerItem(id, track: false, cancellationToken);
+        Item item = await ObtenerItem(id, track: true, cancellationToken);
         
         item.UpadteEntity(itemDto);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

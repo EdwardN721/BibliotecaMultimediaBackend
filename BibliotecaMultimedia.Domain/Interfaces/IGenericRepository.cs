@@ -5,7 +5,7 @@ namespace BibliotecaMultimedia.Domain.Interfaces;
 
 public interface IGenericRepository<T> where T : BaseEntity
 {
-    Task<IEnumerable<T>> ObtenerTodosAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<T>> ObtenerTodosAsync(string? includeProperties = null, CancellationToken cancellationToken = default);
     Task<T?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<T?> GetFirstOrDefaultAsync(
@@ -29,6 +29,7 @@ public interface IGenericRepository<T> where T : BaseEntity
         int pageNumber = 1,
         int pageSize = 10,
         CancellationToken cancellationToken = default,
+        string? includeProperties = null,
         params Expression<Func<T, object>>[] includes);
 
     Task AgregarAsync(T entity, CancellationToken cancellationToken = default);
