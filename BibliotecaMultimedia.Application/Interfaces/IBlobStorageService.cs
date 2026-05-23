@@ -1,4 +1,4 @@
-namespace BibliotecaMultimedia.Infrastructure.Interfaces;
+namespace BibliotecaMultimedia.Application.Interfaces;
 
 public interface IBlobStorageService
 {

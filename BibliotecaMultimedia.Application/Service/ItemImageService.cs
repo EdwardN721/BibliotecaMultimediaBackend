@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Text;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Images;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Imagenes;
@@ -16,11 +17,13 @@ public class ItemImageService : IItemImageService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ItemImageService> _logger;
+    private readonly IBlobStorageService _blobStorageService;
 
-    public ItemImageService(IUnitOfWork unitOfWork, ILogger<ItemImageService> logger)
+    public ItemImageService(IUnitOfWork unitOfWork, ILogger<ItemImageService> logger, IBlobStorageService blobStorageService)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _blobStorageService = blobStorageService ?? throw new ArgumentNullException(nameof(blobStorageService));
     }
 
     public async Task<RespuestaPaginada<RespuestaImagenDto>> ObtenerImagenesPaginados(FiltroImagen filtroImagen, CancellationToken cancellationToken = default)
@@ -95,7 +98,44 @@ public class ItemImageService : IItemImageService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogWarning("Imagen con el Id: {Id} eliminado", imagen.Id);
     }
-    
+
+    public async Task<RespuestaUploadChunkDto> ProcesarChunkAsync(Guid itemId, Stream chunkStream, string fileName, string contentType, int chunkIndex,
+        int totalChunks, CancellationToken cancellationToken = default)
+    {
+        Item? itemExiste = await _unitOfWork.Items.GetFirstOrDefaultAsync(i => i.Id == itemId, cancellationToken, disableTracking: true);    
+        if (itemExiste == null) 
+        {
+            throw new NotFoundException($"No se encontró el ítem {itemId}");
+        }
+        
+        string blobName = $"items/{itemId}/images/{fileName}";
+        string blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(chunkIndex.ToString("d6")));
+        
+        await _blobStorageService.SubirArchivosChunkAsync(blobName, blockId, chunkStream, cancellationToken);
+
+        if (chunkIndex == totalChunks - 1)
+        {
+            IEnumerable<string> todosLosBloques = Enumerable.Range(0, totalChunks)
+                .Select(i => Convert.ToBase64String(Encoding.UTF8.GetBytes(i.ToString("d6"))));
+            
+            string urlFinal = await _blobStorageService.ConsolidarChunksAsync(blobName, todosLosBloques, contentType, cancellationToken);
+            ItemImage nuevaImagen = new ItemImage
+            {
+                ItemId = itemId,
+                ImageUrl = urlFinal,
+            };
+            
+            await _unitOfWork.CreadoresImagenes.AgregarAsync(nuevaImagen, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            _logger.LogInformation("Imagen consolidada y guardada para el Item {ItemId}", itemId);
+            
+            return ImagenMapper.MapUploadChunkSuccessToDto(urlFinal);
+        }
+        
+        return ImagenMapper.MapUploadChunkFailedToDto(chunkIndex, totalChunks);
+    }
+
     #region MetodosPrivados
 
     private async Task<ItemImage> ObtenerItemImage(Guid id, bool track = true, CancellationToken cancellationToken = default)

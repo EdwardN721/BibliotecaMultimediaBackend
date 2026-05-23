@@ -1,14 +1,16 @@
 using System.Linq.Expressions;
 using Microsoft.Extensions.Logging;
+using BibliotecaMultimedia.Domain.Models;
 using BibliotecaMultimedia.Domain.Interfaces;
+using BibliotecaMultimedia.Application.Mappers;
+using BibliotecaMultimedia.Application.Exceptions;
 using BibliotecaMultimedia.Application.Interfaces;
+using BibliotecaMultimedia.Application.DTOs.Eventos;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Items;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Items;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
-using BibliotecaMultimedia.Application.Exceptions;
-using BibliotecaMultimedia.Application.Mappers;
-using BibliotecaMultimedia.Domain.Models;
+
 
 namespace BibliotecaMultimedia.Application.Service;
 
@@ -16,11 +18,13 @@ public class ItemService : IItemService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ItemService> _logger;
+    private readonly IServiceBus _serviceBus;
 
-    public ItemService(IUnitOfWork unitOfWork, ILogger<ItemService> logger)
+    public ItemService(IUnitOfWork unitOfWork, ILogger<ItemService> logger, IServiceBus serviceBus)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _serviceBus = serviceBus ?? throw new ArgumentNullException(nameof(serviceBus));
     }
 
     public async Task<RespuestaPaginada<RespuestaItemDto>> ObtenerItemsPaginado(FiltroItem filtroItem, CancellationToken cancellationToken = default)
@@ -86,6 +90,11 @@ public class ItemService : IItemService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Item agregado: {Id} - {Nombre}", nuevoItem.Id, nuevoItem.Title);
+        
+        ItemAgregadoEvento evento = nuevoItem.ToDto(currentUserId);
+        
+        await _serviceBus.NotificarAgregacionAsync(evento, cancellationToken);
+        
         return nuevoItem.MapToDto();
     }
 

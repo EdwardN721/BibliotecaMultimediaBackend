@@ -40,4 +40,23 @@ public static class ImagenMapper
         image.ImageUrl = entity.ImageUrl;
         image.IsPrimary = entity.IsPrimary;
     }
+
+    public static RespuestaUploadChunkDto MapUploadChunkSuccessToDto(string urlFinal)
+    {
+        return new RespuestaUploadChunkDto
+        {
+            CargaCompletada = true,
+            Mensaje = "Carga y consolidación completa",
+            UrlFinal = urlFinal
+        };
+    }
+    
+    public static RespuestaUploadChunkDto MapUploadChunkFailedToDto(int chunkIndex, int totalChunks)
+    {
+        return new RespuestaUploadChunkDto
+        {
+            CargaCompletada = false,
+            Mensaje = $"Chunk {chunkIndex + 1} de {totalChunks} procesado."
+        };
+    }
 }

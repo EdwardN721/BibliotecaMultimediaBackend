@@ -13,4 +13,7 @@ public interface IItemImageService
     Task<RespuestaImagenDto> AgregarImagenAsync(PeticionAgregarImagenDto imagenDto, CancellationToken cancellationToken = default);
     Task ActualizarImagenAsync(Guid id, PeticionActualizarImagenDto imagenDtoDto, CancellationToken cancellationToken = default);
     Task EliminarImagenAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<RespuestaUploadChunkDto> ProcesarChunkAsync(Guid itemId, Stream chunkStream, string fileName,
+        string contentType, int chunkIndex, int totalChunks, CancellationToken cancellationToken = default);
 }

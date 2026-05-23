@@ -1,7 +1,7 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
-using BibliotecaMultimedia.Infrastructure.Interfaces;
+using BibliotecaMultimedia.Application.Interfaces;
 
 namespace BibliotecaMultimedia.Infrastructure.Services;
 

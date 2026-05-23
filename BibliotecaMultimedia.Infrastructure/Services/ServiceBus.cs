@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
-using BibliotecaMultimedia.Infrastructure.Interfaces;
+using BibliotecaMultimedia.Application.DTOs.Eventos;
+using BibliotecaMultimedia.Application.Interfaces;
 
 namespace BibliotecaMultimedia.Infrastructure.Services;
 
@@ -22,23 +23,17 @@ public class ServiceBus : IServiceBus, IAsyncDisposable
     /// <summary>
     /// Notificar al usuario
     /// </summary>
-    /// <param name="itemId">Item que se agrego</param>
-    /// <param name="nombreTitulo">Titulo que se agrego</param>
+    /// <param name="evento">Información del evento a notificar</param>
     /// <param name="cancellationToken">Token para cancelacion asincrona</param>
-    public async Task NotificarAgregacionAsync(Guid itemId, string nombreTitulo, CancellationToken cancellationToken = default)
+    public async Task NotificarAgregacionAsync(ItemAgregadoEvento evento, CancellationToken cancellationToken = default)
     {
-        var mensaje = new
+        string json = JsonSerializer.Serialize(evento);
+        ServiceBusMessage message = new ServiceBusMessage(json)
         {
-            Evento = "AgregarNuevoArticulo",
-            ItemId = itemId,
-            Titulo = nombreTitulo,
-            Fecha = DateTimeOffset.UtcNow,
+            Subject = "ItemAgregado"
         };
         
-        string json = JsonSerializer.Serialize(mensaje);
-        ServiceBusMessage serviceBusMessage = new ServiceBusMessage(json);
-        
-        await _sender.SendMessageAsync(serviceBusMessage, cancellationToken);
+        await _sender.SendMessageAsync(message, cancellationToken);
     }
 
     public async ValueTask DisposeAsync()

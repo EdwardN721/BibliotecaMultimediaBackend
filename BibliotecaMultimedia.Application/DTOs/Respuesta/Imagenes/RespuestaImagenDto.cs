@@ -9,3 +9,10 @@ public record RespuestaImagenDto
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset? UpdatedAt { get; init; }
 };
+
+public record RespuestaUploadChunkDto
+{
+    public bool CargaCompletada { get; init; }
+    public string Mensaje { get; init; } = string.Empty;
+    public string? UrlFinal { get; init; }
+}
