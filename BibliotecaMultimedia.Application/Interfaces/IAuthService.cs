@@ -5,6 +5,6 @@ namespace BibliotecaMultimedia.Application.Interfaces;
 
 public interface IAuthService
 {
-    Task<AuthResponseDto> RegisterAsync(PeticionCrearUsuarioDto peticion);
-    Task<AuthResponseDto> LoginAsync(LoginDto peticion);
+    Task<AuthResponseDto> RegisterAsync(PeticionCrearUsuarioDto peticion, CancellationToken cancellationToken = default);
+    Task<AuthResponseDto> LoginAsync(LoginDto peticion, CancellationToken cancellationToken = default);
 }

@@ -28,9 +28,9 @@ public class AuthController : ControllerBase
     /// <param name="peticion">Dto que registrará al usuario.</param>
     /// <returns>Código de creación y respuesta.</returns>
     [HttpPost("registrar")]
-    public async Task<IActionResult> Registrar([FromBody] PeticionCrearUsuarioDto peticion)
+    public async Task<IActionResult> Registrar([FromBody] PeticionCrearUsuarioDto peticion, CancellationToken cancellationToken)
     {
-        AuthResponseDto response = await _authService.RegisterAsync(peticion);
+        AuthResponseDto response = await _authService.RegisterAsync(peticion, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, response);
     }
     
@@ -40,9 +40,9 @@ public class AuthController : ControllerBase
     /// <param name="request">Parametros para iniciar la sesión.</param>
     /// <returns>Retorna Token y datos de usuarios.</returns>
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto request)
+    public async Task<IActionResult> Login([FromBody] LoginDto request, CancellationToken cancellationToken)
     {
-        AuthResponseDto response = await _authService.LoginAsync(request);
+        AuthResponseDto response = await _authService.LoginAsync(request, cancellationToken);
         return Ok(response);
     }
 }

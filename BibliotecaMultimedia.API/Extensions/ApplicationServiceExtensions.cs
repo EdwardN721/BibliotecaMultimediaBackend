@@ -68,6 +68,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IFormatoService, FormatoService>();
         services.AddScoped<ICreadorService, CreadorService>();
         services.AddScoped<IItemService, ItemService>();
+        services.AddScoped<IItemImageService, ItemImageService>();
         
         return services;
     }
@@ -96,6 +97,25 @@ public static class ApplicationServiceExtensions
                 options.GroupNameFormat = "'v'VVV";
                 options.SubstituteApiVersionInUrl = true;
             });
+        return services;
+    }
+
+    public static IServiceCollection AddCorsConfiguration(this IServiceCollection services, IConfiguration configuration)
+    {
+        string frontendUrl = configuration.GetValue<string>("FrontendUrl") ?? "http://localhost:4200";
+
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontend",
+                policy =>
+                {
+                    policy.WithOrigins(frontendUrl)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .WithExposedHeaders("X-Pagination");
+                });
+        });
+        
         return services;
     }
 }

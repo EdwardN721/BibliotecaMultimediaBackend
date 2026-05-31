@@ -1,3 +1,4 @@
+using BibliotecaMultimedia.Application.DTOs.Respuesta.Imagenes;
 using BibliotecaMultimedia.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,7 +29,7 @@ public class ItemImagesController : ControllerBase
     {
         using Stream fileStream = chunk.OpenReadStream();
         
-        var resultado = await _itemImageService.ProcesarChunkAsync(
+        RespuestaUploadChunkDto resultado = await _itemImageService.ProcesarChunkAsync(
             itemId, 
             fileStream,
             fileName,

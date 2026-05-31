@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BibliotecaMultimedia.API.Handlers;
 
-public class GlobalExceptionHandler : IExceptionHandler 
+public class GlobalExceptionHandler : IExceptionHandler
 {
     private readonly ILogger<GlobalExceptionHandler> _logger;
 
@@ -17,13 +17,13 @@ public class GlobalExceptionHandler : IExceptionHandler
     {
         // 1. Creamos logs para saber donde hubo error
         _logger.LogError(exception, "Ocurrió un error: {Message}", exception.Message);
-        
+
         // 2. Dar formato estandarizado
         ProblemDetails problemDetails = new ProblemDetails
         {
             Instance = httpContext.Request.Path,
         };
-        
+
         // 3. Filtramos el tipo de excepción para dar la respuesta HTTP correcta
         if (exception is ValidationAppException validationAppException)
         {
@@ -32,7 +32,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             problemDetails.Status = StatusCodes.Status400BadRequest;
             problemDetails.Detail = validationAppException.Message;
             problemDetails.Extensions["errors"] = validationAppException.Errors; // Inyectamos el diccionario de errores
-        } 
+        }
         else if (exception is IdentityUserException identityException)
         {
             httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
@@ -55,6 +55,13 @@ public class GlobalExceptionHandler : IExceptionHandler
             problemDetails.Status = StatusCodes.Status404NotFound;
             problemDetails.Detail = notFoundException.Message;
         }
+        else if (exception is OperationCanceledException operationCanceledException)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status499ClientClosedRequest;
+            problemDetails.Title = "La operación fue cancelada";
+            problemDetails.Status = httpContext.Response.StatusCode;
+            problemDetails.Detail = "El cliente canceló la solicitud antes de que se completara.";
+        }
         else
         {
             // Error genérico para atrapar cosas inesperadas (ej. la base de datos se cayó)
@@ -63,7 +70,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             problemDetails.Status = StatusCodes.Status500InternalServerError;
             problemDetails.Detail = "Ha ocurrido un error inesperado. Por favor contacte al soporte.";
         }
-        
+
         // 4. Escribimos la respuesta en formato JSON
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
 

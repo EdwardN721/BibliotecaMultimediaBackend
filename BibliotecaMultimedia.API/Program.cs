@@ -31,6 +31,12 @@ builder.Services.AddRepositories();
 // Agregar Services
 builder.Services.AddServices();
 
+// Agregar Service Bus y Blobstorage
+builder.Services.AddExternalServices(builder.Configuration);
+
+// Agregar Cors
+builder.Services.AddCorsConfiguration(builder.Configuration);
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -40,6 +46,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi(); // Genera el archivo json
     app.MapScalarApiReference(); // Levanta la nueva UI en /scalar/v1
 }
+
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 app.UseAuthentication(); 

@@ -30,7 +30,7 @@ public class AuthService : IAuthService
         _validator = validator;
     }
 
-    public async Task<AuthResponseDto> RegisterAsync(PeticionCrearUsuarioDto peticion)
+    public async Task<AuthResponseDto> RegisterAsync(PeticionCrearUsuarioDto peticion, CancellationToken cancellationToken = default)
     {
         var validationResult = await _validator.ValidateAsync(peticion);
         if (!validationResult.IsValid)
@@ -39,25 +39,30 @@ public class AuthService : IAuthService
         }
 
         User usuario = peticion.ToEntity();
-        
+
+        // Cancelar si es neceseario
+        cancellationToken.ThrowIfCancellationRequested();
+
         // Crear al usuario en Identity
         IdentityResult result = await _userManager.CreateAsync(usuario, peticion.Password);
         if (!result.Succeeded)
         {
             throw new IdentityUserException(result.Errors);
         }
-        
+
         // Asignar Rol
         string roleName = Enum.GetName(typeof(AppRole), AppRole.User)!;
-        
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!await _roleManager.RoleExistsAsync(roleName))
         {
             await _roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
         }
         await _userManager.AddToRoleAsync(usuario, roleName);
-        
+
         // Generar Token y devolcer
         string token = await GenerateTokenAsync(usuario);
+        cancellationToken.ThrowIfCancellationRequested();
 
         return new AuthResponseDto
         {
@@ -66,12 +71,14 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<AuthResponseDto> LoginAsync(LoginDto peticion)
+    public async Task<AuthResponseDto> LoginAsync(LoginDto peticion, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         User? usuario = await _userManager.FindByEmailAsync(peticion.Email);
         if (usuario == null || !await _userManager.CheckPasswordAsync(usuario, peticion.Password))
         {
-            throw new UnauthorizedAppException("Credenciales inválidas."); 
+            throw new UnauthorizedAppException("Credenciales inválidas.");
         }
 
         string token = await GenerateTokenAsync(usuario);
@@ -82,6 +89,7 @@ public class AuthService : IAuthService
             User = usuario.MapToDto()
         };
     }
+
 
     #region MetodosPrivados
 
@@ -94,14 +102,14 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.Email, user.Email!),
             new Claim(ClaimTypes.Name, user.Nombre)
         };
-        
+
         // Extraer roles del usuario e inyectarlos como Claims
         IList<string> roles = await _userManager.GetRolesAsync(user);
         foreach (var role in roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
-        
+
         // Configuración de la llave y expiración
         SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
         SigningCredentials creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -114,10 +122,10 @@ public class AuthService : IAuthService
             Audience = _configuration["Jwt:Audience"],
             SigningCredentials = creds
         };
-        
+
         JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
         SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
-        
+
         return tokenHandler.WriteToken(token);
     }
 

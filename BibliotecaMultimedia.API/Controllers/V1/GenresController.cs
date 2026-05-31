@@ -54,9 +54,9 @@ public class GenresController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(IEnumerable<RespuestaGeneroDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ObtenerTodosGeneros()
+    public async Task<IActionResult> ObtenerTodosGeneros(CancellationToken cancellationToken)
     {
-        IEnumerable<RespuestaGeneroDto> generos = await _generoService.ObtenerTodosAsync();
+        IEnumerable<RespuestaGeneroDto> generos = await _generoService.ObtenerTodosAsync(cancellationToken);
         return Ok(generos);
     }
 
@@ -69,9 +69,9 @@ public class GenresController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(RespuestaGeneroDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ObtenerGeneroPorId([FromRoute] Guid id)
+    public async Task<IActionResult> ObtenerGeneroPorId([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        RespuestaGeneroDto genero = await _generoService.ObtenerPorIdAsync(id);
+        RespuestaGeneroDto genero = await _generoService.ObtenerPorIdAsync(id, cancellationToken);
         return Ok(genero);
     }
 
@@ -84,9 +84,9 @@ public class GenresController : ControllerBase
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(RespuestaGeneroDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> AgregarGenero([FromBody] PeticionCrearGeneroDto generoDto)
+    public async Task<IActionResult> AgregarGenero([FromBody] PeticionCrearGeneroDto generoDto, CancellationToken cancellationToken)
     {
-        RespuestaGeneroDto generoNuevo = await _generoService.AgregarGeneroAsync(generoDto);
+        RespuestaGeneroDto generoNuevo = await _generoService.AgregarGeneroAsync(generoDto, cancellationToken);
         return CreatedAtAction(nameof(ObtenerGeneroPorId), new { id = generoNuevo.Id }, generoNuevo);
     }
 
@@ -102,9 +102,9 @@ public class GenresController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ActualizarGenero([FromRoute] Guid id,
-        [FromBody] PeticionActualizarGeneroDto generoDto)
+        [FromBody] PeticionActualizarGeneroDto generoDto, CancellationToken cancellationToken)
     {
-        await _generoService.ActualizarGeneroAsync(id, generoDto);
+        await _generoService.ActualizarGeneroAsync(id, generoDto, cancellationToken);
         return NoContent();
     }
 
@@ -117,9 +117,9 @@ public class GenresController : ControllerBase
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> EliminarGenero([FromRoute] Guid id)
+    public async Task<IActionResult> EliminarGenero([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        await _generoService.EliminarGeneroAsync(id);
+        await _generoService.EliminarGeneroAsync(id, cancellationToken);
         return NoContent();
     }
 }
