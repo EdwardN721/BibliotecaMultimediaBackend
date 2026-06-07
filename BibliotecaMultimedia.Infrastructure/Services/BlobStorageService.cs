@@ -14,9 +14,10 @@ public class BlobStorageService : IBlobStorageService
     private readonly BlobServiceClient _blobServiceClient;
     private readonly string _containerName = "biblioteca-multimedia";
     
-    public BlobStorageService(string connectionString)
+    public BlobStorageService(string connectionString, string blobContainerString)
     {
         _blobServiceClient = new BlobServiceClient(connectionString);
+        _containerName = blobContainerString;
     }
 
     /// <summary>

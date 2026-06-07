@@ -84,7 +84,7 @@ public class ItemController : ControllerBase
     /// <param name="cancellationToken">Token de cancelación</param>
     /// <returns>Ítem recién creado</returns>
     [HttpPost]
-    [Authorize] 
+    [Authorize(Roles = "Admin")] 
     [ProducesResponseType(typeof(RespuestaItemDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -111,7 +111,7 @@ public class ItemController : ControllerBase
     /// <param name="cancellationToken">Token de cancelación</param>
     /// <returns>Estado de la operación</returns>
     [HttpPut("{id:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -128,7 +128,7 @@ public class ItemController : ControllerBase
     /// <param name="cancellationToken">Token de cancelación</param>
     /// <returns>Estado de la operación</returns>
     [HttpDelete("{id:guid}")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> EliminarItem([FromRoute] Guid id, CancellationToken cancellationToken)

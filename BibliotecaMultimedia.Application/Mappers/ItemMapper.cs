@@ -11,11 +11,8 @@ public static class ItemMapper
     {
         return new Item
         {
-            UserId = currentUserId,
             Title = itemDto.Title,
             ReleaseDate = itemDto.ReleaseDate,
-            Rating = itemDto.Rating,
-            IsFavorite = itemDto.IsFavorite,
             Metadata = itemDto.Metadata is null
                 ? null
                 : JsonDocument.Parse(JsonSerializer.Serialize(itemDto.Metadata)),
@@ -32,8 +29,6 @@ public static class ItemMapper
             Id = item.Id,
             Title = item.Title,
             ReleaseDate = item.ReleaseDate,
-            Rating = item.Rating,
-            IsFavorite = item.IsFavorite,
             
             Metadata = item.Metadata != null 
                 ? JsonSerializer.Deserialize<Dictionary<string, object>>(item.Metadata.RootElement.GetRawText()) 
@@ -57,8 +52,6 @@ public static class ItemMapper
     {
         item.Title = itemDto.Title;
         item.ReleaseDate = itemDto.ReleaseDate;
-        item.Rating = itemDto.Rating;
-        item.IsFavorite = itemDto.IsFavorite;
         item.Metadata = itemDto.Metadata is null
             ? null
             : JsonDocument.Parse(JsonSerializer.Serialize(itemDto.Metadata));

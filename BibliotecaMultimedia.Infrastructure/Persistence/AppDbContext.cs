@@ -18,6 +18,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser<Guid>, IdentityRole<G
     public DbSet<Platform> Platforms => Set<Platform>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Genre> Genres => Set<Genre>();
+    public DbSet<UserItem> UserItems => Set<UserItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -14,6 +14,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<MediaType> TiposMedia { get; }
     IGenericRepository<Platform> Plataformas { get; }
     IGenericRepository<Role> Roles { get; }
+    IGenericRepository<UserItem> UserItems { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     // Gestión de Transacciones especificas

@@ -47,8 +47,9 @@ public static class InfrastructureServiceExtension
         {
             string blobConnectionString = configuration.GetConnectionString("AzureBlobStorage") 
                                           ?? throw new BusinessRuleException("La cadena de conexión de AzureBlobStorage no está configurada.");
+            string blobContainerString = configuration["ConnectionStrings.AzureBlobStorageContainer"] ?? throw new BusinessRuleException("El Contenedor de Azure BlobStorage no está configurado.");
             
-            return new BlobStorageService(blobConnectionString);
+            return new BlobStorageService(blobConnectionString, blobContainerString);
         });
 
         // 2. Registrar Service Bus como Singleton

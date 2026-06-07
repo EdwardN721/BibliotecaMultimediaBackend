@@ -13,15 +13,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BibliotecaMultimedia.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260501065604_AddUserRelationship")]
-    partial class AddUserRelationship
+    [Migration("20260607060426_ArquitecturaDefinitiva")]
+    partial class ArquitecturaDefinitiva
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -35,6 +35,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
 
                     b.Property<string>("Bio")
                         .ValueGeneratedOnAdd()
+                        .HasMaxLength(1500)
                         .HasColumnType("text")
                         .HasDefaultValue("Sin Descripción.");
 
@@ -49,7 +50,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -75,7 +76,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -99,12 +100,16 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -131,9 +136,6 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.Property<Guid>("FormatId")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsFavorite")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid>("MediaTypeId")
                         .HasColumnType("uuid");
 
@@ -145,9 +147,6 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.Property<Guid?>("PlatformId")
                         .HasColumnType("uuid");
 
-                    b.Property<short?>("Rating")
-                        .HasColumnType("smallint");
-
                     b.Property<DateOnly?>("ReleaseDate")
                         .HasColumnType("date");
 
@@ -156,11 +155,8 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -169,8 +165,6 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.HasIndex("MediaTypeId");
 
                     b.HasIndex("PlatformId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("items", (string)null);
                 });
@@ -197,7 +191,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -231,7 +225,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.Property<Guid>("ItemId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -270,7 +264,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.Property<Guid>("ItemId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -300,7 +294,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -329,7 +323,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -358,7 +352,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -367,6 +361,65 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("roles", (string)null);
+                });
+
+            modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.UserItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DateAdded")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<short?>("PersonalRating")
+                        .HasColumnType("smallint");
+
+                    b.Property<string>("Progress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Review")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("UserId", "ItemId")
+                        .IsUnique();
+
+                    b.ToTable("user_items", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
@@ -582,6 +635,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("PrimerApellido")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("SegundoApellido")
@@ -608,19 +662,11 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("PlatformId");
 
-                    b.HasOne("BibliotecaMultimedia.Domain.Models.User", "User")
-                        .WithMany("Items")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Format");
 
                     b.Navigation("MediaType");
 
                     b.Navigation("Platform");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.ItemCreator", b =>
@@ -678,6 +724,25 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Item");
+                });
+
+            modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.UserItem", b =>
+                {
+                    b.HasOne("BibliotecaMultimedia.Domain.Models.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BibliotecaMultimedia.Domain.Models.User", "User")
+                        .WithMany("UserItems")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -747,7 +812,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.User", b =>
                 {
-                    b.Navigation("Items");
+                    b.Navigation("UserItems");
                 });
 #pragma warning restore 612, 618
         }

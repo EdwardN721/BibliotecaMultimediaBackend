@@ -20,6 +20,7 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<MediaType>? _tiposMedia;
     private IGenericRepository<Platform>? _plataformas;
     private IGenericRepository<Role>? _roles;
+    private IGenericRepository<UserItem>? _userItems;
 
     public UnitOfWork(AppDbContext context)
     {
@@ -74,6 +75,11 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<Role> Roles
     {
         get { return _roles ??= new GenericRepository<Role>(_context); }
+    }
+
+    public IGenericRepository<UserItem> UserItems
+    {
+        get { return _userItems ??= new GenericRepository<UserItem>(_context); }
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

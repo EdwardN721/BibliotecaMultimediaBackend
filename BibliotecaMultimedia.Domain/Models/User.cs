@@ -8,5 +8,5 @@ public class User : IdentityUser<Guid>
     public string PrimerApellido { get; set; } = string.Empty;
     public string? SegundoApellido { get; set; } = string.Empty;
     
-    public virtual ICollection<Item> Items { get; private set; } = new List<Item>();
+    public virtual ICollection<UserItem> UserItems { get; private set; } = new List<UserItem>();
 }
