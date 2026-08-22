@@ -1,9 +1,15 @@
+using System.Text.Json.Serialization;
 using BibliotecaMultimedia.API.Extensions;
+using BibliotecaMultimedia.Infrastructure.Persistence;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddOpenApi();
 
 // Agregar middleware
@@ -38,6 +44,15 @@ builder.Services.AddExternalServices(builder.Configuration);
 builder.Services.AddCorsConfiguration(builder.Configuration);
 
 var app = builder.Build();
+
+try
+{
+    await DatabaseSeeder.SeedCatalogoAsync(app.Services);
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "No se pudo ejecutar el sembrado del catálogo en el arranque.");
+}
 
 app.UseExceptionHandler();
 

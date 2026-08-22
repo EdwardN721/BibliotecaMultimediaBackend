@@ -37,6 +37,8 @@ public class MediaTypeService : IMediaTypeService
             filter: filtro,
             pageNumber: filtroMediaType.PageNumber,
             pageSize: filtroMediaType.PageSize,
+            ordenarPor: filtroMediaType.OrdenarPor,
+            ordenDescendente: filtroMediaType.OrdenDescendente,
             cancellationToken: cancellation);
         
         int totalPaginas = (int)Math.Ceiling(total / (double)filtroMediaType.PageSize);

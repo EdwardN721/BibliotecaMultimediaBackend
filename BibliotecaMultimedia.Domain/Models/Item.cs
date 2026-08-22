@@ -9,7 +9,11 @@ public class Item : BaseEntity
     public Guid? PlatformId { get; set; }
     
     public required string Title { get; set; } = string.Empty;
+    public string? Descripcion { get; set; }
     public DateOnly? ReleaseDate { get; set; }
+    public short? Rating { get; set; }
+    public bool IsFavorite { get; set; } = false;
+    public string? IsbnOrUpc { get; set; }
     
     public JsonDocument? Metadata { get; set; }
     

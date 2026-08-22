@@ -69,6 +69,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ICreadorService, CreadorService>();
         services.AddScoped<IItemService, ItemService>();
         services.AddScoped<IItemImageService, ItemImageService>();
+        services.AddScoped<IBibliotecaService, BibliotecaService>();
         
         return services;
     }

@@ -12,7 +12,7 @@ public class ItemValidator : AbstractValidator<PeticionCrearItemDto>
             .MaximumLength(255).WithMessage("El título no puede exceder los 255 caracteres.");
 
         RuleFor(x => x.Rating)
-            .InclusiveBetween((short)0, (short)5).WithMessage("La calificación debe estar entre 0 y 5.")
+            .InclusiveBetween((short)0, (short)10).WithMessage("La calificación debe estar entre 0 y 10.")
             .When(x => x.Rating.HasValue);
 
         // Fks requeridas
@@ -38,7 +38,7 @@ public class ActualizarItemValidator : AbstractValidator<PeticionActualizarItemD
             .MaximumLength(255).WithMessage("El título no puede exceder los 255 caracteres.");
 
         RuleFor(x => x.Rating)
-            .InclusiveBetween((short)0, (short)5).WithMessage("La calificación debe estar entre 0 y 5.")
+            .InclusiveBetween((short)0, (short)10).WithMessage("La calificación debe estar entre 0 y 10.")
             .When(x => x.Rating.HasValue);
 
         // Fks requeridas

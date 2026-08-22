@@ -49,6 +49,22 @@ public class ItemController : ControllerBase
     }
 
     /// <summary>
+    /// Obtener los ítems destacados (novedades del catálogo) para la vista de descubrimiento
+    /// </summary>
+    /// <param name="cantidad">Cantidad máxima de ítems a devolver (1-50)</param>
+    /// <param name="cancellationToken">Token de cancelación</param>
+    /// <returns>Lista de ítems destacados</returns>
+    [HttpGet("destacados")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(IEnumerable<RespuestaItemDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerDestacados([FromQuery] int cantidad = 12,
+        CancellationToken cancellationToken = default)
+    {
+        IEnumerable<RespuestaItemDto> destacados = await _itemService.ObtenerDestacados(cantidad, cancellationToken);
+        return Ok(destacados);
+    }
+
+    /// <summary>
     /// Obtener todos los ítems registrados
     /// </summary>
     /// <returns>Lista completa de ítems</returns>

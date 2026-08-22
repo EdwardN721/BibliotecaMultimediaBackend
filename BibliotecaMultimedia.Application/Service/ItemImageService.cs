@@ -41,6 +41,8 @@ public class ItemImageService : IItemImageService
             pageNumber: filtroImagen.PageNumber,
             pageSize: filtroImagen.PageSize,
             includeProperties: null,
+            ordenarPor: filtroImagen.OrdenarPor,
+            ordenDescendente: filtroImagen.OrdenDescendente,
             cancellationToken: cancellationToken);
         
         int totalPaginas = (int)Math.Ceiling(total / (double)filtroImagen.PageSize);
@@ -83,7 +85,7 @@ public class ItemImageService : IItemImageService
     public async Task ActualizarImagenAsync(Guid id, PeticionActualizarImagenDto imagenDtoDto,
         CancellationToken cancellationToken = default)
     {
-        ItemImage imagen = await ObtenerItemImage(id, false, cancellationToken);
+        ItemImage imagen = await ObtenerItemImage(id, track: true, cancellationToken);
         
         imagen.UpdateEntity(imagenDtoDto);
         
@@ -93,8 +95,9 @@ public class ItemImageService : IItemImageService
 
     public async Task EliminarImagenAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        ItemImage imagen = await ObtenerItemImage(id, false, cancellationToken);
+        ItemImage imagen = await ObtenerItemImage(id, track: true, cancellationToken);
         
+        _unitOfWork.CreadoresImagenes.Eliminar(imagen);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogWarning("Imagen con el Id: {Id} eliminado", imagen.Id);
     }
@@ -107,8 +110,15 @@ public class ItemImageService : IItemImageService
         {
             throw new NotFoundException($"No se encontró el ítem {itemId}");
         }
+
+        if (chunkIndex < 0 || totalChunks <= 0 || chunkIndex >= totalChunks)
+        {
+            throw new BusinessRuleException("Los índices de fragmentos no son válidos.");
+        }
+
+        string nombreSeguro = SanitizarFileName(fileName);
         
-        string blobName = $"items/{itemId}/images/{fileName}";
+        string blobName = $"items/{itemId}/images/{nombreSeguro}";
         string blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(chunkIndex.ToString("d6")));
         
         await _blobStorageService.SubirArchivosChunkAsync(blobName, blockId, chunkStream, cancellationToken);
@@ -137,6 +147,12 @@ public class ItemImageService : IItemImageService
     }
 
     #region MetodosPrivados
+
+    private static string SanitizarFileName(string fileName)
+    {
+        string nombre = Path.GetFileName(fileName.Replace('\\', '/'));
+        return string.IsNullOrWhiteSpace(nombre) ? "imagen" : nombre;
+    }
 
     private async Task<ItemImage> ObtenerItemImage(Guid id, bool track = true, CancellationToken cancellationToken = default)
     {

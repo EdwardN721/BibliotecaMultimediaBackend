@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 using BibliotecaMultimedia.Domain.Models;
 using BibliotecaMultimedia.Domain.Interfaces;
-using BibliotecaMultimedia.Domain.Exceptions;
+using BibliotecaMultimedia.Application.Exceptions;
 using BibliotecaMultimedia.Application.Mappers;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Catalogos;
@@ -37,6 +37,8 @@ public class GeneroService : IGeneroService
             filter: filtro,
             pageNumber: filtroGenero.PageNumber,
             pageSize: filtroGenero.PageSize,
+            ordenarPor: filtroGenero.OrdenarPor,
+            ordenDescendente: filtroGenero.OrdenDescendente,
             cancellationToken: cancellationToken);
         
         int totalPaginas = (int)Math.Ceiling(total / (double)filtroGenero.PageSize);

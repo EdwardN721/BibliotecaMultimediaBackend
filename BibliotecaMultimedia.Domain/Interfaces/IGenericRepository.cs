@@ -30,7 +30,20 @@ public interface IGenericRepository<T> where T : BaseEntity
         int pageSize = 10,
         CancellationToken cancellationToken = default,
         string? includeProperties = null,
+        string? ordenarPor = null,
+        bool ordenDescendente = false,
         params Expression<Func<T, object>>[] includes);
+
+    Task<(IEnumerable<TResult> Registros, int Total)> ObtenerPaginadosProyectadosAsync<TResult>(
+        Expression<Func<T, TResult>> selector,
+        Expression<Func<T, bool>>? filter = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default,
+        string? ordenarPor = null,
+        bool ordenDescendente = false);
+
+    Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task AgregarAsync(T entity, CancellationToken cancellationToken = default);
     void Actualizar(T entity);

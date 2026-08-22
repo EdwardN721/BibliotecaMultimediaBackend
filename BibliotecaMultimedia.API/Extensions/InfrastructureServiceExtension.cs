@@ -1,5 +1,5 @@
+using BibliotecaMultimedia.Application.Exceptions;
 using BibliotecaMultimedia.Application.Interfaces;
-using BibliotecaMultimedia.Domain.Exceptions;
 using BibliotecaMultimedia.Domain.Interfaces;
 using BibliotecaMultimedia.Infrastructure.Interceptors;
 using BibliotecaMultimedia.Infrastructure.Persistence;
@@ -13,6 +13,7 @@ public static class InfrastructureServiceExtension
 {
     public static IServiceCollection AddInterceptors(this IServiceCollection services)
     {
+        services.AddHttpContextAccessor();
         services.AddScoped<UserSessionInterceptor>();
         services.AddScoped<AuditInterceptor>();
         

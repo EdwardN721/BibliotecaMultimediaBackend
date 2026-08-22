@@ -38,6 +38,8 @@ public class CreadorService : ICreadorService
             filter: filtro,
             pageNumber: filtroCreador.PageNumber,
             pageSize: filtroCreador.PageSize,
+            ordenarPor: filtroCreador.OrdenarPor,
+            ordenDescendente: filtroCreador.OrdenDescendente,
             cancellationToken: cancellationToken);
         
         int totalPaginas = (int)Math.Ceiling(total / (double)filtroCreador.PageSize);

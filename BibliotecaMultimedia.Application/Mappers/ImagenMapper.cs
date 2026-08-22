@@ -20,7 +20,7 @@ public static class ImagenMapper
     {
         return new RespuestaImagenDto
         {
-            Id = image.ItemId,
+            Id = image.Id,
             ItemId = image.ItemId,
             ImageUrl = image.ImageUrl,
             IsPrimary = image.IsPrimary,

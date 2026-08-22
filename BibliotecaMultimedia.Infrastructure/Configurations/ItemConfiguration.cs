@@ -17,6 +17,12 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .IsRequired()
             .HasMaxLength(255);
 
+        builder.Property(i => i.Descripcion)
+            .HasMaxLength(4000);
+
+        builder.Property(i => i.IsbnOrUpc)
+            .HasMaxLength(32);
+
         // Mapeo crucial: Decirle a Npgsql que use jsonb para el JsonDocument
         builder.Property(i => i.Metadata)
             .HasColumnType("jsonb")

@@ -72,7 +72,7 @@ public class UnitOfWork : IUnitOfWork
         get { return _plataformas ??= new GenericRepository<Platform>(_context); }
     }
 
-    public IGenericRepository<Role> Roles
+    public IGenericRepository<Role> CreatorRoles
     {
         get { return _roles ??= new GenericRepository<Role>(_context); }
     }
@@ -87,29 +87,29 @@ public class UnitOfWork : IUnitOfWork
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task BeginTransactionAsync()
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction != null)
         {
             return;
         }
-        _transaction = await _context.Database.BeginTransactionAsync(); 
+        _transaction = await _context.Database.BeginTransactionAsync(cancellationToken); 
     }
 
-    public async Task CommitTransactionAsync()
+    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             if (_transaction != null)
             {
-                await _transaction.CommitAsync();
+                await _transaction.CommitAsync(cancellationToken);
             }
         }
         catch
         {
-            await RollbackTransactionAsync();
+            await RollbackTransactionAsync(cancellationToken);
             throw;
         }
         finally
@@ -122,13 +122,13 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
-    public async Task RollbackTransactionAsync()
+    public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             if (_transaction != null)
             {
-                await _transaction.RollbackAsync();
+                await _transaction.RollbackAsync(cancellationToken);
             }
         }
         finally

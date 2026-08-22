@@ -5,7 +5,7 @@ using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Plataformas;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.Mappers;
-using BibliotecaMultimedia.Domain.Exceptions;
+using BibliotecaMultimedia.Application.Exceptions;
 using BibliotecaMultimedia.Domain.Interfaces;
 using BibliotecaMultimedia.Domain.Models;
 using Microsoft.Extensions.Logging;
@@ -37,6 +37,8 @@ public class PlataformaService : IPlataformaService
             filter: filtro,
             pageNumber: filtroPlataforma.PageNumber,
             pageSize: filtroPlataforma.PageSize,
+            ordenarPor: filtroPlataforma.OrdenarPor,
+            ordenDescendente: filtroPlataforma.OrdenDescendente,
             cancellationToken: cancellationToken
         );
 
@@ -87,6 +89,7 @@ public class PlataformaService : IPlataformaService
     {
         Platform plataforma = await BuscarPorId(id, cancellation);
         _unitOfWork.Plataformas.Eliminar(plataforma);
+        await _unitOfWork.SaveChangesAsync(cancellation);
         _logger.LogWarning("Se elimino la plataforma con el Id: {Id}", id);
     }
 

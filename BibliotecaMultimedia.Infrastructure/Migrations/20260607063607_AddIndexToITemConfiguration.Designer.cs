@@ -4,6 +4,7 @@ using System.Text.Json;
 using BibliotecaMultimedia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BibliotecaMultimedia.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607063607_AddIndexToITemConfiguration")]
+    partial class AddIndexToITemConfiguration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -130,19 +133,8 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Descripcion")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
-
                     b.Property<Guid>("FormatId")
                         .HasColumnType("uuid");
-
-                    b.Property<bool>("IsFavorite")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("IsbnOrUpc")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
 
                     b.Property<Guid>("MediaTypeId")
                         .HasColumnType("uuid");
@@ -154,9 +146,6 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
 
                     b.Property<Guid?>("PlatformId")
                         .HasColumnType("uuid");
-
-                    b.Property<short?>("Rating")
-                        .HasColumnType("smallint");
 
                     b.Property<DateOnly?>("ReleaseDate")
                         .HasColumnType("date");

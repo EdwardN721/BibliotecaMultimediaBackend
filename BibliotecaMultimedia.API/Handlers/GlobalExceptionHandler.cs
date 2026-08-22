@@ -1,6 +1,8 @@
 using BibliotecaMultimedia.Application.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace BibliotecaMultimedia.API.Handlers;
 
@@ -54,6 +56,24 @@ public class GlobalExceptionHandler : IExceptionHandler
             problemDetails.Title = "Recurso no encontrado";
             problemDetails.Status = StatusCodes.Status404NotFound;
             problemDetails.Detail = notFoundException.Message;
+        }
+        else if (exception is BusinessRuleException businessRuleException)
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+            problemDetails.Title = "Conflicto de regla de negocio";
+            problemDetails.Status = StatusCodes.Status409Conflict;
+            problemDetails.Detail = businessRuleException.Message;
+        }
+        else if (exception is DbUpdateException dbUpdateException)
+        {
+            // Violaciones de índices únicos (ej. duplicado en la biblioteca por carrera entre check e insert)
+            bool violacionUnicidad = dbUpdateException.InnerException is PostgresException { SqlState: "23505" };
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+            problemDetails.Title = "Conflicto de integridad de datos";
+            problemDetails.Status = StatusCodes.Status409Conflict;
+            problemDetails.Detail = violacionUnicidad
+                ? "El registro ya existe o viola una restricción de unicidad."
+                : "La operación no puede completarse porque viola una restricción de integridad de datos.";
         }
         else if (exception is OperationCanceledException operationCanceledException)
         {

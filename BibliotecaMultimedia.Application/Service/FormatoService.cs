@@ -37,6 +37,8 @@ public class FormatoService : IFormatoService
             filter: filtro,
             pageNumber: filtroFormato.PageNumber,
             pageSize: filtroFormato.PageSize,
+            ordenarPor: filtroFormato.OrdenarPor,
+            ordenDescendente: filtroFormato.OrdenDescendente,
             cancellationToken: cancellationToken);
         
         int totalPaginas = (int)Math.Ceiling(total / (double)filtroFormato.PageSize);

@@ -13,12 +13,12 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<ItemImage> CreadoresImagenes { get; }
     IGenericRepository<MediaType> TiposMedia { get; }
     IGenericRepository<Platform> Plataformas { get; }
-    IGenericRepository<Role> Roles { get; }
+    IGenericRepository<Role> CreatorRoles { get; }
     IGenericRepository<UserItem> UserItems { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     // Gestión de Transacciones especificas
-    Task BeginTransactionAsync();
-    Task CommitTransactionAsync();
-    Task RollbackTransactionAsync();
+    Task BeginTransactionAsync(CancellationToken cancellationToken = default);
+    Task CommitTransactionAsync(CancellationToken cancellationToken = default);
+    Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
 }

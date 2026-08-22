@@ -76,10 +76,25 @@ public class AuthService : IAuthService
         cancellationToken.ThrowIfCancellationRequested();
 
         User? usuario = await _userManager.FindByEmailAsync(peticion.Email);
-        if (usuario == null || !await _userManager.CheckPasswordAsync(usuario, peticion.Password))
+        if (usuario == null)
         {
+            // Mensaje genérico para no revelar si el email existe
             throw new UnauthorizedAppException("Credenciales inválidas.");
         }
+
+        if (await _userManager.IsLockedOutAsync(usuario))
+        {
+            throw new UnauthorizedAppException("Cuenta bloqueada temporalmente por intentos fallidos. Intente más tarde.");
+        }
+
+        if (!await _userManager.CheckPasswordAsync(usuario, peticion.Password))
+        {
+            // Registramos el intento fallido; Identity bloquea la cuenta al superar el límite
+            await _userManager.AccessFailedAsync(usuario);
+            throw new UnauthorizedAppException("Credenciales inválidas.");
+        }
+
+        await _userManager.ResetAccessFailedCountAsync(usuario);
 
         string token = await GenerateTokenAsync(usuario);
 

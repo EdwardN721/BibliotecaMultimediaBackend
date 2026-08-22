@@ -1,11 +1,12 @@
 namespace BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 
-public class FiltroItem : PeticionPaginacion
+using BibliotecaMultimedia.Domain.Enums;
+
+public class FiltroBiblioteca : PeticionPaginacion
 {
     public string? TerminoBusqueda { get; set; }
+    public ConsumptionStatus? Status { get; set; }
+    public bool? IsFavorite { get; set; }
     public string? OrdenarPor { get; set; }
     public bool OrdenDescendente { get; set; } = false;
-    public Guid? MediaTypeId { get; set; }
-    public Guid? GenreId { get; set; }
-    public Guid? PlatformId { get; set; }
 }
