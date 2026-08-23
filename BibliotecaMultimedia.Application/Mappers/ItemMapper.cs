@@ -25,13 +25,13 @@ public static class ItemMapper
         public DateTimeOffset? UpdatedAt { get; init; }
         public JsonDocument? Metadata { get; init; }
         public Guid MediaTypeId { get; init; }
-        public Guid FormatId { get; init; }
-        public Guid? PlatformId { get; init; }
+        public List<Guid> FormatIds { get; init; } = new();
+        public List<Guid> PlatformIds { get; init; } = new();
         public List<Guid> GenreIds { get; init; } = new();
         public List<Guid> CreatorIds { get; init; } = new();
         public string MediaType { get; init; } = string.Empty;
-        public string Format { get; init; } = string.Empty;
-        public string? Platform { get; init; }
+        public List<string> Formats { get; init; } = new();
+        public List<string> Platforms { get; init; } = new();
         public List<string> Genres { get; init; } = new();
         public List<string> Creators { get; init; } = new();
     }
@@ -51,15 +51,19 @@ public static class ItemMapper
             UpdatedAt = i.UpdatedAt,
             Metadata = i.Metadata,
             MediaType = i.MediaType != null ? i.MediaType.Name : string.Empty,
-            Format = i.Format != null ? i.Format.Name : string.Empty,
-            Platform = i.Platform != null ? i.Platform.Name : null,
             MediaTypeId = i.MediaTypeId,
-            FormatId = i.FormatId,
-            PlatformId = i.PlatformId,
             MainImageUrl = i.ItemImages!
                 .OrderBy(im => im.IsPrimary ? 0 : 1)
                 .Select(im => im.ImageUrl)
                 .FirstOrDefault(),
+            Formats = i.ItemFormats!
+                .Select(ifm => ifm.Format != null ? ifm.Format.Name : string.Empty)
+                .Where(n => n != string.Empty)
+                .ToList(),
+            Platforms = i.ItemPlatforms!
+                .Select(ip => ip.Platform != null ? ip.Platform.Name : string.Empty)
+                .Where(n => n != string.Empty)
+                .ToList(),
             Genres = i.ItemGenres!
                 .Select(ig => ig.Genre != null ? ig.Genre.Name : string.Empty)
                 .Where(n => n != string.Empty)
@@ -67,6 +71,12 @@ public static class ItemMapper
             Creators = i.ItemCreators!
                 .Select(ic => ic.Creator != null ? ic.Creator.Name : string.Empty)
                 .Where(n => n != string.Empty)
+                .ToList(),
+            FormatIds = i.ItemFormats!
+                .Select(ifm => ifm.FormatId)
+                .ToList(),
+            PlatformIds = i.ItemPlatforms!
+                .Select(ip => ip.PlatformId)
                 .ToList(),
             GenreIds = i.ItemGenres!
                 .Select(ig => ig.GenreId)
@@ -95,13 +105,13 @@ public static class ItemMapper
                 ? JsonSerializer.Deserialize<Dictionary<string, object>>(proyeccion.Metadata.RootElement.GetRawText())
                 : null,
             MediaType = proyeccion.MediaType,
-            Format = proyeccion.Format,
-            Platform = proyeccion.Platform,
+            Formats = proyeccion.Formats,
+            Platforms = proyeccion.Platforms,
             Genres = proyeccion.Genres,
             Creators = proyeccion.Creators,
             MediaTypeId = proyeccion.MediaTypeId,
-            FormatId = proyeccion.FormatId,
-            PlatformId = proyeccion.PlatformId,
+            FormatIds = proyeccion.FormatIds,
+            PlatformIds = proyeccion.PlatformIds,
             GenreIds = proyeccion.GenreIds,
             CreatorIds = proyeccion.CreatorIds,
         };
@@ -111,6 +121,7 @@ public static class ItemMapper
     {
         return proyecciones?.Select(MapProyeccionToDto) ?? Enumerable.Empty<RespuestaItemDto>();
     }
+
     public static Item MapToEntity(this PeticionCrearItemDto itemDto, Guid currentUserId)
     {
         return new Item
@@ -125,8 +136,6 @@ public static class ItemMapper
                 ? null
                 : JsonDocument.Parse(JsonSerializer.Serialize(itemDto.Metadata)),
             MediaTypeId = itemDto.MediaTypeId,
-            FormatId = itemDto.FormatId,
-            PlatformId = itemDto.PlatformId,
         };
     }
 
@@ -143,21 +152,21 @@ public static class ItemMapper
             IsbnOrUpc = item.IsbnOrUpc,
             CreatedAt = item.CreatedAt,
             UpdatedAt = item.UpdatedAt,
-            
-            Metadata = item.Metadata != null 
-                ? JsonSerializer.Deserialize<Dictionary<string, object>>(item.Metadata.RootElement.GetRawText()) 
+
+            Metadata = item.Metadata != null
+                ? JsonSerializer.Deserialize<Dictionary<string, object>>(item.Metadata.RootElement.GetRawText())
                 : null,
-            
+
             MediaType = item.MediaType?.Name ?? string.Empty,
-            Format = item.Format?.Name ?? string.Empty,
-            Platform = item.Platform?.Name,
             MediaTypeId = item.MediaTypeId,
-            FormatId = item.FormatId,
-            PlatformId = item.PlatformId,
             MainImageUrl = ObtenerImagenPrincipal(item),
-            
+
+            Formats = item.ItemFormats?.Select(f => f.Format?.Name ?? string.Empty).Where(name => !string.IsNullOrEmpty(name)).ToList() ?? new List<string>(),
+            Platforms = item.ItemPlatforms?.Select(p => p.Platform?.Name ?? string.Empty).Where(name => !string.IsNullOrEmpty(name)).ToList() ?? new List<string>(),
             Genres = item.ItemGenres?.Select(ig => ig.Genre?.Name ?? string.Empty).Where(name => !string.IsNullOrEmpty(name)).ToList() ?? new List<string>(),
             Creators = item.ItemCreators?.Select(ic => ic.Creator?.Name ?? string.Empty).Where(name => !string.IsNullOrEmpty(name)).ToList() ?? new List<string>(),
+            FormatIds = item.ItemFormats?.Select(f => f.FormatId).ToList() ?? new List<Guid>(),
+            PlatformIds = item.ItemPlatforms?.Select(p => p.PlatformId).ToList() ?? new List<Guid>(),
             GenreIds = item.ItemGenres?.Select(ig => ig.GenreId).ToList() ?? new List<Guid>(),
             CreatorIds = item.ItemCreators?.Select(ic => ic.CreatorId).ToList() ?? new List<Guid>()
         };
@@ -180,8 +189,6 @@ public static class ItemMapper
             ? null
             : JsonDocument.Parse(JsonSerializer.Serialize(itemDto.Metadata));
         item.MediaTypeId = itemDto.MediaTypeId;
-        item.FormatId = itemDto.FormatId;
-        item.PlatformId = itemDto.PlatformId;
     }
 
     private static string? ObtenerImagenPrincipal(Item item)

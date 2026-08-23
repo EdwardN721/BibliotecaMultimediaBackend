@@ -67,8 +67,23 @@ public class ItemImageService : IItemImageService
     public async Task<RespuestaImagenDto> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         ItemImage imagen = await ObtenerItemImage(id, false, cancellationToken);
-        
+
         return imagen.MapToDto();
+    }
+
+    public async Task<IEnumerable<RespuestaImagenDto>> ObtenerPorItemAsync(Guid itemId, CancellationToken cancellationToken = default)
+    {
+        List<ItemImage> imagenes = (await _unitOfWork.CreadoresImagenes.FindAsync(
+            i => i.ItemId == itemId, cancellationToken)).ToList();
+
+        // La imagen principal siempre primero; el resto por fecha de creación
+        imagenes = imagenes
+            .OrderByDescending(i => i.IsPrimary)
+            .ThenBy(i => i.CreatedAt)
+            .ToList();
+
+        _logger.LogInformation("Imagenes obtenidas para el item {ItemId}: {Count}", itemId, imagenes.Count);
+        return imagenes.MapToDto();
     }
 
     public async Task<RespuestaImagenDto> AgregarImagenAsync(PeticionAgregarImagenDto imagenDto, CancellationToken cancellationToken = default)
@@ -96,10 +111,53 @@ public class ItemImageService : IItemImageService
     public async Task EliminarImagenAsync(Guid id, CancellationToken cancellationToken = default)
     {
         ItemImage imagen = await ObtenerItemImage(id, track: true, cancellationToken);
-        
+
+        // Borramos primero el blob; si Azure falla no perdemos el registro en BD
+        string? blobName = ExtraerBlobName(imagen.ImageUrl);
+        if (blobName is not null)
+        {
+            try
+            {
+                await _blobStorageService.EliminarArchivoAsync(blobName, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "No se pudo eliminar el blob {BlobName} de la imagen {Id}", blobName, id);
+                throw;
+            }
+        }
+        else
+        {
+            _logger.LogWarning("La imagen {Id} tiene una URL no reconocida ({Url}); solo se elimina el registro", id, imagen.ImageUrl);
+        }
+
         _unitOfWork.CreadoresImagenes.Eliminar(imagen);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogWarning("Imagen con el Id: {Id} eliminado", imagen.Id);
+    }
+
+    public async Task<RespuestaImagenDto> MarcarPrincipalAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        ItemImage imagen = await ObtenerItemImage(id, track: true, cancellationToken);
+
+        if (!imagen.IsPrimary)
+        {
+            // Solo una imagen principal por ítem: desmarcamos las demás
+            IEnumerable<ItemImage> otrasPrincipales = await _unitOfWork.CreadoresImagenes.FindAsync(
+                i => i.ItemId == imagen.ItemId && i.Id != imagen.Id && i.IsPrimary, cancellationToken);
+
+            foreach (ItemImage otra in otrasPrincipales)
+            {
+                otra.IsPrimary = false;
+                _unitOfWork.CreadoresImagenes.Actualizar(otra);
+            }
+
+            imagen.IsPrimary = true;
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        _logger.LogInformation("Imagen {Id} marcada como principal del item {ItemId}", imagen.Id, imagen.ItemId);
+        return imagen.MapToDto();
     }
 
     public async Task<RespuestaUploadChunkDto> ProcesarChunkAsync(Guid itemId, Stream chunkStream, string fileName, string contentType, int chunkIndex,
@@ -147,6 +205,16 @@ public class ItemImageService : IItemImageService
     }
 
     #region MetodosPrivados
+
+    /// <summary>
+    /// Reconstruye el blobName a partir de la URL pública.
+    /// Las URLs tienen la forma .../{contenedor}/items/{itemId}/images/{archivo}
+    /// </summary>
+    private static string? ExtraerBlobName(string imageUrl)
+    {
+        int idx = imageUrl.IndexOf("/items/", StringComparison.OrdinalIgnoreCase);
+        return idx < 0 ? null : imageUrl[(idx + 1)..];
+    }
 
     private static string SanitizarFileName(string fileName)
     {

@@ -57,7 +57,7 @@ public class BibliotecaService : IBibliotecaService
             filter: filtroExpresion,
             pageNumber: filtro.PageNumber,
             pageSize: filtro.PageSize,
-            includeProperties: "Item.MediaType,Item.Format,Item.Platform,Item.ItemGenres.Genre,Item.ItemCreators.Creator,Item.ItemImages",
+            includeProperties: "Item.MediaType,Item.ItemFormats.Format,Item.ItemPlatforms.Platform,Item.ItemGenres.Genre,Item.ItemCreators.Creator,Item.ItemImages",
             ordenarPor: filtro.OrdenarPor,
             ordenDescendente: filtro.OrdenDescendente,
             cancellationToken: cancellationToken);
@@ -184,7 +184,7 @@ public class BibliotecaService : IBibliotecaService
         UserItem? userItem = await _unitOfWork.UserItems.GetFirstOrDefaultAsync(
             predicate: u => u.Id == userItemId,
             cancellationToken: cancellationToken,
-            includeProperties: "Item.MediaType,Item.Format,Item.Platform,Item.ItemGenres.Genre,Item.ItemCreators.Creator,Item.ItemImages",
+            includeProperties: "Item.MediaType,Item.ItemFormats.Format,Item.ItemPlatforms.Platform,Item.ItemGenres.Genre,Item.ItemCreators.Creator,Item.ItemImages",
             disableTracking: !track);
 
         if (userItem is null)

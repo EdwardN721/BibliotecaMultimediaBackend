@@ -134,9 +134,6 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
 
-                    b.Property<Guid>("FormatId")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("IsFavorite")
                         .HasColumnType("boolean");
 
@@ -151,9 +148,6 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
                         .HasDefaultValueSql("'{}'::jsonb");
-
-                    b.Property<Guid?>("PlatformId")
-                        .HasColumnType("uuid");
 
                     b.Property<short?>("Rating")
                         .HasColumnType("smallint");
@@ -171,11 +165,7 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FormatId");
-
                     b.HasIndex("MediaTypeId");
-
-                    b.HasIndex("PlatformId");
 
                     b.ToTable("items", (string)null);
                 });
@@ -215,6 +205,38 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("item_creators", (string)null);
+                });
+
+            modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.ItemFormat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FormatId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FormatId");
+
+                    b.HasIndex("ItemId", "FormatId")
+                        .IsUnique();
+
+                    b.ToTable("item_formats", (string)null);
                 });
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.ItemGenre", b =>
@@ -285,6 +307,38 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasFilter("\"IsPrimary\" = true");
 
                     b.ToTable("item_images", (string)null);
+                });
+
+            modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.ItemPlatform", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PlatformId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlatformId");
+
+                    b.HasIndex("ItemId", "PlatformId")
+                        .IsUnique();
+
+                    b.ToTable("item_platforms", (string)null);
                 });
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.MediaType", b =>
@@ -657,27 +711,13 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.Item", b =>
                 {
-                    b.HasOne("BibliotecaMultimedia.Domain.Models.Format", "Format")
-                        .WithMany()
-                        .HasForeignKey("FormatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("BibliotecaMultimedia.Domain.Models.MediaType", "MediaType")
                         .WithMany()
                         .HasForeignKey("MediaTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BibliotecaMultimedia.Domain.Models.Platform", "Platform")
-                        .WithMany()
-                        .HasForeignKey("PlatformId");
-
-                    b.Navigation("Format");
-
                     b.Navigation("MediaType");
-
-                    b.Navigation("Platform");
                 });
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.ItemCreator", b =>
@@ -705,6 +745,25 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.Navigation("Item");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.ItemFormat", b =>
+                {
+                    b.HasOne("BibliotecaMultimedia.Domain.Models.Format", "Format")
+                        .WithMany()
+                        .HasForeignKey("FormatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BibliotecaMultimedia.Domain.Models.Item", "Item")
+                        .WithMany("ItemFormats")
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Format");
+
+                    b.Navigation("Item");
                 });
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.ItemGenre", b =>
@@ -735,6 +794,25 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Item");
+                });
+
+            modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.ItemPlatform", b =>
+                {
+                    b.HasOne("BibliotecaMultimedia.Domain.Models.Item", "Item")
+                        .WithMany("ItemPlatforms")
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BibliotecaMultimedia.Domain.Models.Platform", "Platform")
+                        .WithMany()
+                        .HasForeignKey("PlatformId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Platform");
                 });
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.UserItem", b =>
@@ -816,9 +894,13 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                 {
                     b.Navigation("ItemCreators");
 
+                    b.Navigation("ItemFormats");
+
                     b.Navigation("ItemGenres");
 
                     b.Navigation("ItemImages");
+
+                    b.Navigation("ItemPlatforms");
                 });
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.User", b =>

@@ -12,16 +12,17 @@ public class ItemValidator : AbstractValidator<PeticionCrearItemDto>
             .MaximumLength(255).WithMessage("El título no puede exceder los 255 caracteres.");
 
         RuleFor(x => x.Rating)
-            .InclusiveBetween((short)0, (short)10).WithMessage("La calificación debe estar entre 0 y 10.")
+            .InclusiveBetween((short)1, (short)5).WithMessage("La calificación debe estar entre 1 y 5.")
             .When(x => x.Rating.HasValue);
 
         // Fks requeridas
         RuleFor(x => x.MediaTypeId).NotEmpty().WithMessage("El tipo de medio es obligatorio.");
-        RuleFor(x => x.FormatId).NotEmpty().WithMessage("El formato es obligatorio.");
-        RuleFor(x => x.PlatformId)
-            .NotEmpty().WithMessage("La plataforma proporcionada no es válida.")
-            .When(x => x.PlatformId.HasValue);
-        
+        RuleFor(x => x.FormatIds)
+            .NotEmpty().WithMessage("Debe seleccionar al menos un formato.")
+            .Must(ids => ids.All(id => id != Guid.Empty)).WithMessage("Los formatos proporcionados no son válidos.");
+        RuleFor(x => x.PlatformIds)
+            .Must(ids => ids.All(id => id != Guid.Empty)).WithMessage("Las plataformas proporcionadas no son válidas.");
+
         RuleFor(x => x.GenreIds)
             .NotEmpty().WithMessage("Debe seleccionar al menos un género.");
         RuleFor(x => x.CreatorIds)
@@ -38,16 +39,17 @@ public class ActualizarItemValidator : AbstractValidator<PeticionActualizarItemD
             .MaximumLength(255).WithMessage("El título no puede exceder los 255 caracteres.");
 
         RuleFor(x => x.Rating)
-            .InclusiveBetween((short)0, (short)10).WithMessage("La calificación debe estar entre 0 y 10.")
+            .InclusiveBetween((short)1, (short)5).WithMessage("La calificación debe estar entre 1 y 5.")
             .When(x => x.Rating.HasValue);
 
         // Fks requeridas
         RuleFor(x => x.MediaTypeId).NotEmpty().WithMessage("El tipo de medio es obligatorio.");
-        RuleFor(x => x.FormatId).NotEmpty().WithMessage("El formato es obligatorio.");
-        RuleFor(x => x.PlatformId)
-            .NotEmpty().WithMessage("La plataforma proporcionada no es válida.")
-            .When(x => x.PlatformId.HasValue);
-        
+        RuleFor(x => x.FormatIds)
+            .NotEmpty().WithMessage("Debe seleccionar al menos un formato.")
+            .Must(ids => ids.All(id => id != Guid.Empty)).WithMessage("Los formatos proporcionados no son válidos.");
+        RuleFor(x => x.PlatformIds)
+            .Must(ids => ids.All(id => id != Guid.Empty)).WithMessage("Las plataformas proporcionadas no son válidas.");
+
         RuleFor(x => x.GenreIds)
             .NotEmpty().WithMessage("Debe seleccionar al menos un género.");
         RuleFor(x => x.CreatorIds)

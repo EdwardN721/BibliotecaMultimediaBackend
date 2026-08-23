@@ -61,7 +61,17 @@ public class BlobStorageService : IBlobStorageService
 
         await blockBlobClient.CommitBlockListAsync(blockIds, new CommitBlockListOptions
             { HttpHeaders = headers }, cancellationToken: cancellationToken);
-        
+
         return blockBlobClient.Uri.ToString();
+    }
+
+    /// <inheritdoc />
+    public async Task EliminarArchivoAsync(string blobName, CancellationToken cancellationToken = default)
+    {
+        BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+        BlockBlobClient blockBlobClient = containerClient.GetBlockBlobClient(blobName);
+
+        // DeleteIfExistsAsync no falla si el blob ya fue eliminado previamente
+        await blockBlobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
     }
 }

@@ -51,13 +51,52 @@ public class ItemImagesController : ControllerBase
         using Stream fileStream = chunk.OpenReadStream();
         
         RespuestaUploadChunkDto resultado = await _itemImageService.ProcesarChunkAsync(
-            itemId, 
+            itemId,
             fileStream,
             fileName,
             chunk.ContentType,
             chunkIndex,
             totalChunks,
             cancellationToken);
-        return Ok(resultado); 
+        return Ok(resultado);
+    }
+
+    /// <summary>
+    /// Lista todas las imágenes de un ítem (la principal primero).
+    /// </summary>
+    [HttpGet("item/{itemId:guid}")]
+    [Authorize]
+    [ProducesResponseType(typeof(IEnumerable<RespuestaImagenDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ObtenerPorItem(Guid itemId, CancellationToken cancellationToken)
+    {
+        IEnumerable<RespuestaImagenDto> imagenes = await _itemImageService.ObtenerPorItemAsync(itemId, cancellationToken);
+        return Ok(imagenes);
+    }
+
+    /// <summary>
+    /// Elimina una imagen (blob en Azure + registro). Solo administradores.
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> EliminarImagen(Guid id, CancellationToken cancellationToken)
+    {
+        await _itemImageService.EliminarImagenAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Marca una imagen como principal del ítem. Solo administradores.
+    /// </summary>
+    [HttpPut("{id:guid}/principal")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(RespuestaImagenDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> MarcarPrincipal(Guid id, CancellationToken cancellationToken)
+    {
+        RespuestaImagenDto imagen = await _itemImageService.MarcarPrincipalAsync(id, cancellationToken);
+        return Ok(imagen);
     }
 }

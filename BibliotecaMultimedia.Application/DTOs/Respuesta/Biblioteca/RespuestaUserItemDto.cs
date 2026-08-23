@@ -8,8 +8,8 @@ public record RespuestaUserItemDto
     public Guid ItemId { get; init; }
     public string Titulo { get; init; } = string.Empty;
     public string MediaType { get; init; } = string.Empty;
-    public string Format { get; init; } = string.Empty;
-    public string? Platform { get; init; }
+    public List<string> Formats { get; init; } = new List<string>();
+    public List<string> Platforms { get; init; } = new List<string>();
     public List<string> Genres { get; init; } = new List<string>();
     public List<string> Creators { get; init; } = new List<string>();
     public string? ImageUrl { get; init; }

@@ -8,12 +8,14 @@ public record PeticionActualizarItemDto
     public short? Rating { get; init; }
     public bool IsFavorite { get; init; } = false;
     public string? IsbnOrUpc { get; init; }
-    
+
     public Dictionary<string, object>? Metadata { get; init; }
-    
+
     public Guid MediaTypeId { get; init; }
-    public Guid FormatId { get; init; }
-    public Guid? PlatformId { get; init; }
+
+    // Un ítem puede existir en varios formatos (Físico + Digital) y varias plataformas
+    public List<Guid> FormatIds { get; init; } = new List<Guid>();
+    public List<Guid> PlatformIds { get; init; } = new List<Guid>();
 
     public List<Guid> GenreIds { get; init; } = new List<Guid>();
     public List<Guid> CreatorIds { get; init; } = new List<Guid>();

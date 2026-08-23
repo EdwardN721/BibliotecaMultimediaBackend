@@ -47,7 +47,8 @@ public class ItemService : IItemService
 
         if (filtroItem.PlatformId.HasValue && filtroItem.PlatformId.Value != Guid.Empty)
         {
-            Expression<Func<Item, bool>> filtroPlataforma = i => i.PlatformId == filtroItem.PlatformId.Value;
+            Guid plataformaId = filtroItem.PlatformId.Value;
+            Expression<Func<Item, bool>> filtroPlataforma = i => i.ItemPlatforms != null && i.ItemPlatforms.Any(p => p.PlatformId == plataformaId);
             filtro = filtro == null ? filtroPlataforma : filtro.And(filtroPlataforma);
         }
 
@@ -81,7 +82,7 @@ public class ItemService : IItemService
     public async Task<IEnumerable<RespuestaItemDto>> ObtenerItems(CancellationToken cancellationToken = default)
     {
         List<Item> items = (await _unitOfWork.Items.ObtenerTodosAsync(
-            includeProperties: "MediaType,Format,Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages",
+            includeProperties: "MediaType,ItemFormats.Format,ItemPlatforms.Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages",
             cancellationToken)).ToList();
 
         // Orden determinista: la BD no garantiza orden sin ORDER BY
@@ -97,7 +98,7 @@ public class ItemService : IItemService
         if (cantidad > 50) cantidad = 50;
 
         List<Item> items = (await _unitOfWork.Items.ObtenerTodosAsync(
-            includeProperties: "MediaType,Format,Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages",
+            includeProperties: "MediaType,ItemFormats.Format,ItemPlatforms.Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages",
             cancellationToken)).ToList();
 
         // Novedades: los últimos agregados al catálogo. Orden determinista por CreatedAt + Id
@@ -145,6 +146,16 @@ public class ItemService : IItemService
             foreach (Guid creatorId in itemDto.CreatorIds)
             {
                 nuevoItem.ItemCreators?.Add(new ItemCreator { CreatorId = creatorId, ItemId = Guid.Empty, RoleId = roleId });
+            }
+
+            foreach (Guid formatId in itemDto.FormatIds)
+            {
+                nuevoItem.ItemFormats?.Add(new ItemFormat { FormatId = formatId, ItemId = Guid.Empty });
+            }
+
+            foreach (Guid platformId in itemDto.PlatformIds)
+            {
+                nuevoItem.ItemPlatforms?.Add(new ItemPlatform { PlatformId = platformId, ItemId = Guid.Empty });
             }
 
             await _unitOfWork.Items.AgregarAsync(nuevoItem, cancellationToken);
@@ -207,105 +218,77 @@ public class ItemService : IItemService
     
     #region MetodosPrivados
 
-    private async Task ValidarReferenciasAsync(PeticionCrearItemDto itemDto, CancellationToken cancellationToken)
+    private Task ValidarReferenciasAsync(PeticionCrearItemDto itemDto, CancellationToken cancellationToken)
+        => ValidarReferenciasComunesAsync(itemDto.MediaTypeId, itemDto.FormatIds, itemDto.PlatformIds,
+            itemDto.GenreIds, itemDto.CreatorIds, cancellationToken);
+
+    private Task ValidarReferenciasActualizarAsync(PeticionActualizarItemDto itemDto, CancellationToken cancellationToken)
+        => ValidarReferenciasComunesAsync(itemDto.MediaTypeId, itemDto.FormatIds, itemDto.PlatformIds,
+            itemDto.GenreIds, itemDto.CreatorIds, cancellationToken);
+
+    private async Task ValidarReferenciasComunesAsync(
+        Guid mediaTypeId,
+        List<Guid> formatIds,
+        List<Guid> platformIds,
+        List<Guid> genreIds,
+        List<Guid> creatorIds,
+        CancellationToken cancellationToken)
     {
         bool mediaTypeExiste = await _unitOfWork.TiposMedia.GetFirstOrDefaultAsync(
-            m => m.Id == itemDto.MediaTypeId, cancellationToken, disableTracking: true) is not null;
+            m => m.Id == mediaTypeId, cancellationToken, disableTracking: true) is not null;
         if (!mediaTypeExiste)
         {
-            throw new NotFoundException($"El tipo de medio {itemDto.MediaTypeId} no existe.");
+            throw new NotFoundException($"El tipo de medio {mediaTypeId} no existe.");
         }
 
-        bool formatoExiste = await _unitOfWork.Formatos.GetFirstOrDefaultAsync(
-            f => f.Id == itemDto.FormatId, cancellationToken, disableTracking: true) is not null;
-        if (!formatoExiste)
+        if (formatIds.Count == 0)
         {
-            throw new NotFoundException($"El formato {itemDto.FormatId} no existe.");
+            throw new BusinessRuleException("El ítem debe tener al menos un formato.");
         }
 
-        if (itemDto.PlatformId.HasValue)
+        HashSet<Guid> formatosExistentes = (await _unitOfWork.Formatos.FindAsync(
+            f => formatIds.Contains(f.Id), cancellationToken))
+            .Select(f => f.Id).ToHashSet();
+
+        Guid formatoFaltante = formatIds.FirstOrDefault(id => !formatosExistentes.Contains(id));
+        if (formatoFaltante != Guid.Empty)
         {
-            bool plataformaExiste = await _unitOfWork.Plataformas.GetFirstOrDefaultAsync(
-                p => p.Id == itemDto.PlatformId.Value, cancellationToken, disableTracking: true) is not null;
-            if (!plataformaExiste)
+            throw new NotFoundException($"El formato {formatoFaltante} no existe.");
+        }
+
+        if (platformIds.Count > 0)
+        {
+            HashSet<Guid> plataformasExistentes = (await _unitOfWork.Plataformas.FindAsync(
+                p => platformIds.Contains(p.Id), cancellationToken))
+                .Select(p => p.Id).ToHashSet();
+
+            Guid plataformaFaltante = platformIds.FirstOrDefault(id => !plataformasExistentes.Contains(id));
+            if (plataformaFaltante != Guid.Empty)
             {
-                throw new NotFoundException($"La plataforma {itemDto.PlatformId.Value} no existe.");
+                throw new NotFoundException($"La plataforma {plataformaFaltante} no existe.");
             }
         }
 
-        if (itemDto.GenreIds.Count > 0)
+        if (genreIds.Count > 0)
         {
             HashSet<Guid> generosExistentes = (await _unitOfWork.Generos.FindAsync(
-                g => itemDto.GenreIds.Contains(g.Id), cancellationToken))
+                g => genreIds.Contains(g.Id), cancellationToken))
                 .Select(g => g.Id).ToHashSet();
 
-            Guid generoFaltante = itemDto.GenreIds.FirstOrDefault(id => !generosExistentes.Contains(id));
+            Guid generoFaltante = genreIds.FirstOrDefault(id => !generosExistentes.Contains(id));
             if (generoFaltante != Guid.Empty)
             {
                 throw new NotFoundException($"El género {generoFaltante} no existe.");
             }
         }
 
-        if (itemDto.CreatorIds.Count > 0)
+        if (creatorIds.Count > 0)
         {
             HashSet<Guid> creadoresExistentes = (await _unitOfWork.Creadores.FindAsync(
-                c => itemDto.CreatorIds.Contains(c.Id), cancellationToken))
+                c => creatorIds.Contains(c.Id), cancellationToken))
                 .Select(c => c.Id).ToHashSet();
 
-            Guid creadorFaltante = itemDto.CreatorIds.FirstOrDefault(id => !creadoresExistentes.Contains(id));
-            if (creadorFaltante != Guid.Empty)
-            {
-                throw new NotFoundException($"El creador {creadorFaltante} no existe.");
-            }
-        }
-    }
-
-    private async Task ValidarReferenciasActualizarAsync(PeticionActualizarItemDto itemDto, CancellationToken cancellationToken)
-    {
-        bool mediaTypeExiste = await _unitOfWork.TiposMedia.GetFirstOrDefaultAsync(
-            m => m.Id == itemDto.MediaTypeId, cancellationToken, disableTracking: true) is not null;
-        if (!mediaTypeExiste)
-        {
-            throw new NotFoundException($"El tipo de medio {itemDto.MediaTypeId} no existe.");
-        }
-
-        bool formatoExiste = await _unitOfWork.Formatos.GetFirstOrDefaultAsync(
-            f => f.Id == itemDto.FormatId, cancellationToken, disableTracking: true) is not null;
-        if (!formatoExiste)
-        {
-            throw new NotFoundException($"El formato {itemDto.FormatId} no existe.");
-        }
-
-        if (itemDto.PlatformId.HasValue)
-        {
-            bool plataformaExiste = await _unitOfWork.Plataformas.GetFirstOrDefaultAsync(
-                p => p.Id == itemDto.PlatformId.Value, cancellationToken, disableTracking: true) is not null;
-            if (!plataformaExiste)
-            {
-                throw new NotFoundException($"La plataforma {itemDto.PlatformId.Value} no existe.");
-            }
-        }
-
-        if (itemDto.GenreIds.Count > 0)
-        {
-            HashSet<Guid> generosExistentes = (await _unitOfWork.Generos.FindAsync(
-                g => itemDto.GenreIds.Contains(g.Id), cancellationToken))
-                .Select(g => g.Id).ToHashSet();
-
-            Guid generoFaltante = itemDto.GenreIds.FirstOrDefault(id => !generosExistentes.Contains(id));
-            if (generoFaltante != Guid.Empty)
-            {
-                throw new NotFoundException($"El género {generoFaltante} no existe.");
-            }
-        }
-
-        if (itemDto.CreatorIds.Count > 0)
-        {
-            HashSet<Guid> creadoresExistentes = (await _unitOfWork.Creadores.FindAsync(
-                c => itemDto.CreatorIds.Contains(c.Id), cancellationToken))
-                .Select(c => c.Id).ToHashSet();
-
-            Guid creadorFaltante = itemDto.CreatorIds.FirstOrDefault(id => !creadoresExistentes.Contains(id));
+            Guid creadorFaltante = creatorIds.FirstOrDefault(id => !creadoresExistentes.Contains(id));
             if (creadorFaltante != Guid.Empty)
             {
                 throw new NotFoundException($"El creador {creadorFaltante} no existe.");
@@ -317,6 +300,8 @@ public class ItemService : IItemService
     {
         ICollection<ItemGenre> generos = item.ItemGenres!;
         ICollection<ItemCreator> creadores = item.ItemCreators!;
+        ICollection<ItemFormat> formatos = item.ItemFormats!;
+        ICollection<ItemPlatform> plataformas = item.ItemPlatforms!;
 
         List<Guid> generosActuales = generos.Select(g => g.GenreId).ToList();
         foreach (Guid genreId in itemDto.GenreIds.Where(id => !generosActuales.Contains(id)))
@@ -337,6 +322,26 @@ public class ItemService : IItemService
         {
             creadores.Remove(creador);
         }
+
+        List<Guid> formatosActuales = formatos.Select(f => f.FormatId).ToList();
+        foreach (Guid formatId in itemDto.FormatIds.Where(id => !formatosActuales.Contains(id)))
+        {
+            formatos.Add(new ItemFormat { FormatId = formatId, ItemId = item.Id });
+        }
+        foreach (ItemFormat formato in formatos.Where(f => !itemDto.FormatIds.Contains(f.FormatId)).ToList())
+        {
+            formatos.Remove(formato);
+        }
+
+        List<Guid> plataformasActuales = plataformas.Select(p => p.PlatformId).ToList();
+        foreach (Guid platformId in itemDto.PlatformIds.Where(id => !plataformasActuales.Contains(id)))
+        {
+            plataformas.Add(new ItemPlatform { PlatformId = platformId, ItemId = item.Id });
+        }
+        foreach (ItemPlatform plataforma in plataformas.Where(p => !itemDto.PlatformIds.Contains(p.PlatformId)).ToList())
+        {
+            plataformas.Remove(plataforma);
+        }
     }
 
     private async Task<Item> ObtenerItem(Guid id, bool track = true, CancellationToken cancellationToken = default)
@@ -344,7 +349,7 @@ public class ItemService : IItemService
         Item? item = await _unitOfWork.Items.GetFirstOrDefaultAsync(
             predicate: i => i.Id == id,
             cancellationToken: cancellationToken,
-            includeProperties: "MediaType,Format,Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages",
+            includeProperties: "MediaType,ItemFormats.Format,ItemPlatforms.Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages",
             disableTracking: !track
         );
         if (item == null)

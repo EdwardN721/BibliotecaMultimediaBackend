@@ -44,8 +44,14 @@ public static class UserItemMapper
             ItemId = userItem.ItemId,
             Titulo = userItem.Item?.Title ?? string.Empty,
             MediaType = userItem.Item?.MediaType?.Name ?? string.Empty,
-            Format = userItem.Item?.Format?.Name ?? string.Empty,
-            Platform = userItem.Item?.Platform?.Name,
+            Formats = userItem.Item?.ItemFormats
+                ?.Select(f => f.Format?.Name ?? string.Empty)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .ToList() ?? new List<string>(),
+            Platforms = userItem.Item?.ItemPlatforms
+                ?.Select(p => p.Platform?.Name ?? string.Empty)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .ToList() ?? new List<string>(),
             Genres = userItem.Item?.ItemGenres
                 ?.Select(ig => ig.Genre?.Name ?? string.Empty)
                 .Where(n => !string.IsNullOrEmpty(n))

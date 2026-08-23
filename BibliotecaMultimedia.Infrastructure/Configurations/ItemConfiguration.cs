@@ -29,9 +29,7 @@ public class ItemConfiguration : IEntityTypeConfiguration<Item>
             .HasDefaultValueSql("'{}'::jsonb");
         
         builder.HasIndex(i => i.MediaTypeId);
-        
+
         builder.HasOne(i => i.MediaType).WithMany().HasForeignKey(i => i.MediaTypeId);
-        builder.HasOne(i => i.Format).WithMany().HasForeignKey(i => i.FormatId);
-        builder.HasOne(i => i.Platform).WithMany().HasForeignKey(i => i.PlatformId);
     }
 }
