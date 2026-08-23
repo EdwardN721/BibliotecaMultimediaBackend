@@ -47,17 +47,17 @@ public class UnitOfWork : IUnitOfWork
         get { return _items ??= new GenericRepository<Item>(_context); }
     }
 
-    public IGenericRepository<ItemCreator> CreadoresItems
+    public IGenericRepository<ItemCreator> ItemsCreadores
     {
         get { return _creadoresItems ??= new GenericRepository<ItemCreator>(_context); }
     }
 
-    public IGenericRepository<ItemGenre> CreadoresGeneros
+    public IGenericRepository<ItemGenre> ItemsGeneros
     {
         get { return _creadoresGeneros ??= new GenericRepository<ItemGenre>(_context); }
     }
 
-    public IGenericRepository<ItemImage> CreadoresImagenes
+    public IGenericRepository<ItemImage> ImagenesItems
     {
         get { return _creadoresImagenes ??= new GenericRepository<ItemImage>(_context); }
     }

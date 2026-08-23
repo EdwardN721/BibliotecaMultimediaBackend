@@ -65,6 +65,19 @@ public class ItemController : ControllerBase
     }
 
     /// <summary>
+    /// Obtener la distribución de ítems por tipo de medio (agregado en base de datos)
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelación</param>
+    /// <returns>Lista de tipos de medio con cantidad y porcentaje</returns>
+    [HttpGet("distribucion")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(IEnumerable<RespuestaDistribucionItemDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ObtenerDistribucionPorTipoMedio(CancellationToken cancellationToken)
+    {
+        return Ok(await _itemService.ObtenerDistribucionPorTipoMedio(cancellationToken));
+    }
+
+    /// <summary>
     /// Obtener todos los ítems registrados
     /// </summary>
     /// <returns>Lista completa de ítems</returns>

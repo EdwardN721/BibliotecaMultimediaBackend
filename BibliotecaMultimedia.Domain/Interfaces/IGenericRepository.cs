@@ -43,6 +43,15 @@ public interface IGenericRepository<T> where T : BaseEntity
         string? ordenarPor = null,
         bool ordenDescendente = false);
 
+    /// <summary>
+    /// Cuenta registros agrupados por una clave, traducido a GROUP BY en la BD
+    /// (evita traer todos los registros para agregarlos en memoria).
+    /// </summary>
+    Task<List<(TKey Clave, int Cantidad)>> ContarAgrupadoAsync<TKey>(
+        Expression<Func<T, TKey>> agruparPor,
+        Expression<Func<T, bool>>? filtro = null,
+        CancellationToken cancellationToken = default);
+
     Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task AgregarAsync(T entity, CancellationToken cancellationToken = default);

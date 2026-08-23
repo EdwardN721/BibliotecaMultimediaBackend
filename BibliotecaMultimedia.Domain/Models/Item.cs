@@ -9,13 +9,15 @@ public class Item : BaseEntity
     public required string Title { get; set; } = string.Empty;
     public string? Descripcion { get; set; }
     public DateOnly? ReleaseDate { get; set; }
-    public short? Rating { get; set; }
-    public bool IsFavorite { get; set; } = false;
     public string? IsbnOrUpc { get; set; }
 
     public JsonDocument? Metadata { get; set; }
 
     public MediaType? MediaType { get; set; }
+
+    // Navegación inversa de la biblioteca de usuarios; se usa para calcular
+    // el rating promedio del ítem a partir de las calificaciones personales
+    public ICollection<UserItem>? UserItems { get; private set; } = new List<UserItem>();
 
     public ICollection<ItemCreator>? ItemCreators { get; private set; } = new List<ItemCreator>();
     public ICollection<ItemGenre>? ItemGenres { get; private set; } = new List<ItemGenre>();

@@ -6,8 +6,10 @@ public record RespuestaItemDto
     public string Title { get; init; } = string.Empty;
     public string? Descripcion { get; init; }
     public DateOnly? ReleaseDate { get; init; }
-    public short? Rating { get; init; }
-    public bool IsFavorite { get; init; } = false;
+
+    // Promedio calculado de las calificaciones personales (UserItem.PersonalRating)
+    public double? RatingPromedio { get; init; }
+
     public string? IsbnOrUpc { get; init; }
 
     public string? MainImageUrl { get; init; }

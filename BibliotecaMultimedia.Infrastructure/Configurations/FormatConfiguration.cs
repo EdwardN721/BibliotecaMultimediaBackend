@@ -16,6 +16,8 @@ public class FormatConfiguration : IEntityTypeConfiguration<Format>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.HasIndex(f => f.Name).IsUnique();
+        builder.HasIndex(f => f.Name)
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
     }   
 }

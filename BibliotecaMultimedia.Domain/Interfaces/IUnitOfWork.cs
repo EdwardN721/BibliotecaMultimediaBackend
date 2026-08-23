@@ -8,9 +8,9 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Format> Formatos { get; }
     IGenericRepository<Genre> Generos { get; }
     IGenericRepository<Item> Items { get; }
-    IGenericRepository<ItemCreator> CreadoresItems { get; }
-    IGenericRepository<ItemGenre> CreadoresGeneros { get; }
-    IGenericRepository<ItemImage> CreadoresImagenes { get; }
+    IGenericRepository<ItemCreator> ItemsCreadores { get; }
+    IGenericRepository<ItemGenre> ItemsGeneros { get; }
+    IGenericRepository<ItemImage> ImagenesItems { get; }
     IGenericRepository<MediaType> TiposMedia { get; }
     IGenericRepository<Platform> Plataformas { get; }
     IGenericRepository<Role> CreatorRoles { get; }

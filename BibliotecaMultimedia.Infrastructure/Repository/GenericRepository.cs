@@ -125,6 +125,26 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return (registros, total);
     }
 
+    public async Task<List<(TKey Clave, int Cantidad)>> ContarAgrupadoAsync<TKey>(
+        Expression<Func<T, TKey>> agruparPor,
+        Expression<Func<T, bool>>? filtro = null,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<T> query = _dbSet.AsNoTracking();
+
+        if (filtro != null)
+        {
+            query = query.Where(filtro);
+        }
+
+        var filas = await query
+            .GroupBy(agruparPor)
+            .Select(g => new { Clave = g.Key, Cantidad = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        return filas.Select(r => (r.Clave, r.Cantidad)).ToList();
+    }
+
     public async Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate,
         CancellationToken cancellationToken = default,
         params Expression<Func<T, object>>[] includeProperties)
@@ -198,26 +218,53 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return query;
     }
 
+    // Lista blanca de propiedades por las que el cliente puede pedir orden:
+    // evita un 500 al intentar traducir a SQL columnas no ordenables
+    // (p. ej. Metadata jsonb) o nombres arbitrarios.
+    private static readonly Dictionary<Type, HashSet<string>> PropiedadesOrdenPermitidas = new()
+    {
+        [typeof(Item)] = new(StringComparer.OrdinalIgnoreCase)
+            { nameof(Item.Title), nameof(BaseEntity.CreatedAt), nameof(Item.ReleaseDate), nameof(BaseEntity.UpdatedAt) },
+        [typeof(UserItem)] = new(StringComparer.OrdinalIgnoreCase)
+            { nameof(BaseEntity.CreatedAt), nameof(UserItem.DateAdded), nameof(UserItem.StartedAt), nameof(UserItem.FinishedAt), nameof(UserItem.PersonalRating) },
+        [typeof(Creator)] = new(StringComparer.OrdinalIgnoreCase)
+            { nameof(Creator.Name), nameof(BaseEntity.CreatedAt) },
+        [typeof(Genre)] = new(StringComparer.OrdinalIgnoreCase)
+            { nameof(Genre.Name), nameof(BaseEntity.CreatedAt) },
+        [typeof(Format)] = new(StringComparer.OrdinalIgnoreCase)
+            { nameof(Format.Name), nameof(BaseEntity.CreatedAt) },
+        [typeof(MediaType)] = new(StringComparer.OrdinalIgnoreCase)
+            { nameof(MediaType.Name), nameof(BaseEntity.CreatedAt) },
+        [typeof(Platform)] = new(StringComparer.OrdinalIgnoreCase)
+            { nameof(Platform.Name), nameof(BaseEntity.CreatedAt) },
+        [typeof(Role)] = new(StringComparer.OrdinalIgnoreCase)
+            { nameof(Role.Name), nameof(BaseEntity.CreatedAt) },
+        [typeof(ItemImage)] = new(StringComparer.OrdinalIgnoreCase)
+            { nameof(BaseEntity.CreatedAt), nameof(ItemImage.IsPrimary) },
+    };
+
     private static IQueryable<T> AplicarOrden(IQueryable<T> query, string? ordenarPor, bool ordenDescendente)
     {
-        // Solo ordenamos por propiedades públicas existentes en la entidad:
-        // evita un ArgumentException (500) si el cliente envía un nombre inválido.
-        PropertyInfo? propiedad = typeof(T).GetProperty(
-            ordenarPor?.Trim() ?? string.Empty,
-            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-
-        if (!string.IsNullOrWhiteSpace(ordenarPor) && propiedad is not null)
+        if (!string.IsNullOrWhiteSpace(ordenarPor)
+            && PropiedadesOrdenPermitidas.TryGetValue(typeof(T), out HashSet<string>? permitidas))
         {
-            var parametro = Expression.Parameter(typeof(T), "x");
-            var cuerpo = Expression.Property(parametro, propiedad);
-            var selector = Expression.Lambda(cuerpo, parametro);
+            PropertyInfo? propiedad = typeof(T).GetProperty(
+                ordenarPor.Trim(),
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
-            string metodo = ordenDescendente ? "OrderByDescending" : "OrderBy";
-            System.Reflection.MethodInfo? metodoOrden = typeof(Queryable).GetMethods()
-                .First(m => m.Name == metodo && m.GetParameters().Length == 2)
-                .MakeGenericMethod(typeof(T), propiedad.PropertyType);
+            if (propiedad is not null && permitidas.Contains(propiedad.Name))
+            {
+                var parametro = Expression.Parameter(typeof(T), "x");
+                var cuerpo = Expression.Property(parametro, propiedad);
+                var selector = Expression.Lambda(cuerpo, parametro);
 
-            return (IQueryable<T>)metodoOrden.Invoke(null, new object[] { query, selector })!;
+                string metodo = ordenDescendente ? "OrderByDescending" : "OrderBy";
+                System.Reflection.MethodInfo? metodoOrden = typeof(Queryable).GetMethods()
+                    .First(m => m.Name == metodo && m.GetParameters().Length == 2)
+                    .MakeGenericMethod(typeof(T), propiedad.PropertyType);
+
+                return (IQueryable<T>)metodoOrden.Invoke(null, new object[] { query, selector })!;
+            }
         }
 
         return ordenDescendente ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id);

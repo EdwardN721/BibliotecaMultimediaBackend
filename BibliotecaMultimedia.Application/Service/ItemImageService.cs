@@ -15,6 +15,20 @@ namespace BibliotecaMultimedia.Application.Service;
 
 public class ItemImageService : IItemImageService
 {
+    // Whitelist de tipos MIME aceptados para imágenes
+    private static readonly HashSet<string> ContentTypesPermitidos = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg", "image/png", "image/webp", "image/gif",
+    };
+
+    private static readonly HashSet<string> ExtensionesPermitidas = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg", ".jpeg", ".png", ".webp", ".gif",
+    };
+
+    private const long TamanoMaximoChunkBytes = 2 * 1024 * 1024; // 2 MB por fragmento
+    private const int MaximoChunksPorArchivo = 20;               // ~40 MB máximo por imagen
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ItemImageService> _logger;
     private readonly IBlobStorageService _blobStorageService;
@@ -36,7 +50,7 @@ public class ItemImageService : IItemImageService
             filtro = i => i.ImageUrl.ToLower().Contains(termino);
         }
         
-        (IEnumerable<ItemImage> registros, int total) = await _unitOfWork.CreadoresImagenes.ObtenerPaginadosAsync(
+        (IEnumerable<ItemImage> registros, int total) = await _unitOfWork.ImagenesItems.ObtenerPaginadosAsync(
             filter: filtro,
             pageNumber: filtroImagen.PageNumber,
             pageSize: filtroImagen.PageSize,
@@ -58,7 +72,7 @@ public class ItemImageService : IItemImageService
 
     public async Task<IEnumerable<RespuestaImagenDto>> ObtenerTodosAsync(CancellationToken cancellationToken = default)
     {
-        List<ItemImage> imagenes = (await _unitOfWork.CreadoresImagenes.ObtenerTodosAsync(includeProperties: null, cancellationToken)).ToList();
+        List<ItemImage> imagenes = (await _unitOfWork.ImagenesItems.ObtenerTodosAsync(includeProperties: null, cancellationToken)).ToList();
         
         _logger.LogInformation("Imagenes obtenidas: {Count}", imagenes.Count);
         return imagenes.MapToDto();
@@ -73,7 +87,7 @@ public class ItemImageService : IItemImageService
 
     public async Task<IEnumerable<RespuestaImagenDto>> ObtenerPorItemAsync(Guid itemId, CancellationToken cancellationToken = default)
     {
-        List<ItemImage> imagenes = (await _unitOfWork.CreadoresImagenes.FindAsync(
+        List<ItemImage> imagenes = (await _unitOfWork.ImagenesItems.FindAsync(
             i => i.ItemId == itemId, cancellationToken)).ToList();
 
         // La imagen principal siempre primero; el resto por fecha de creación
@@ -90,7 +104,7 @@ public class ItemImageService : IItemImageService
     {
         ItemImage imagen = imagenDto.MapToEntity();
         
-        await _unitOfWork.CreadoresImagenes.AgregarAsync(imagen, cancellationToken);
+        await _unitOfWork.ImagenesItems.AgregarAsync(imagen, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         
         _logger.LogInformation("Imagen {Id} agregado", imagen.Id);
@@ -131,7 +145,7 @@ public class ItemImageService : IItemImageService
             _logger.LogWarning("La imagen {Id} tiene una URL no reconocida ({Url}); solo se elimina el registro", id, imagen.ImageUrl);
         }
 
-        _unitOfWork.CreadoresImagenes.Eliminar(imagen);
+        _unitOfWork.ImagenesItems.Eliminar(imagen);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogWarning("Imagen con el Id: {Id} eliminado", imagen.Id);
     }
@@ -143,13 +157,13 @@ public class ItemImageService : IItemImageService
         if (!imagen.IsPrimary)
         {
             // Solo una imagen principal por ítem: desmarcamos las demás
-            IEnumerable<ItemImage> otrasPrincipales = await _unitOfWork.CreadoresImagenes.FindAsync(
+            IEnumerable<ItemImage> otrasPrincipales = await _unitOfWork.ImagenesItems.FindAsync(
                 i => i.ItemId == imagen.ItemId && i.Id != imagen.Id && i.IsPrimary, cancellationToken);
 
             foreach (ItemImage otra in otrasPrincipales)
             {
                 otra.IsPrimary = false;
-                _unitOfWork.CreadoresImagenes.Actualizar(otra);
+                _unitOfWork.ImagenesItems.Actualizar(otra);
             }
 
             imagen.IsPrimary = true;
@@ -174,7 +188,28 @@ public class ItemImageService : IItemImageService
             throw new BusinessRuleException("Los índices de fragmentos no son válidos.");
         }
 
+        if (!ContentTypesPermitidos.Contains(contentType))
+        {
+            throw new BusinessRuleException($"Tipo de archivo no permitido ({contentType}). Solo se aceptan imágenes JPEG, PNG, WEBP o GIF.");
+        }
+
+        if (totalChunks > MaximoChunksPorArchivo)
+        {
+            throw new BusinessRuleException($"El archivo excede el máximo de {MaximoChunksPorArchivo} fragmentos permitidos.");
+        }
+
+        if (chunkStream.CanSeek && chunkStream.Length > TamanoMaximoChunkBytes)
+        {
+            throw new BusinessRuleException($"El fragmento excede el tamaño máximo de {TamanoMaximoChunkBytes / (1024 * 1024)} MB.");
+        }
+
         string nombreSeguro = SanitizarFileName(fileName);
+
+        string extension = Path.GetExtension(nombreSeguro);
+        if (!ExtensionesPermitidas.Contains(extension))
+        {
+            throw new BusinessRuleException($"Extensión de archivo no permitida ({extension}). Solo se aceptan imágenes JPEG, PNG, WEBP o GIF.");
+        }
         
         string blobName = $"items/{itemId}/images/{nombreSeguro}";
         string blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(chunkIndex.ToString("d6")));
@@ -185,20 +220,32 @@ public class ItemImageService : IItemImageService
         {
             IEnumerable<string> todosLosBloques = Enumerable.Range(0, totalChunks)
                 .Select(i => Convert.ToBase64String(Encoding.UTF8.GetBytes(i.ToString("d6"))));
-            
+
             string urlFinal = await _blobStorageService.ConsolidarChunksAsync(blobName, todosLosBloques, contentType, cancellationToken);
-            ItemImage nuevaImagen = new ItemImage
+
+            // Idempotencia: si la misma imagen (mismo itemId + fileName) ya fue
+            // registrada, no insertamos una fila duplicada en la BD
+            IEnumerable<ItemImage> existentes = await _unitOfWork.ImagenesItems.FindAsync(
+                i => i.ItemId == itemId && i.ImageUrl == urlFinal, cancellationToken);
+            ItemImage? imagenExistente = existentes.FirstOrDefault();
+
+            if (imagenExistente is null)
             {
-                ItemId = itemId,
-                ImageUrl = urlFinal,
-            };
-            
-            await _unitOfWork.CreadoresImagenes.AgregarAsync(nuevaImagen, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            
-            _logger.LogInformation("Imagen consolidada y guardada para el Item {ItemId}", itemId);
-            
-            return ImagenMapper.MapUploadChunkSuccessToDto(urlFinal);
+                ItemImage nuevaImagen = new ItemImage
+                {
+                    ItemId = itemId,
+                    ImageUrl = urlFinal,
+                };
+
+                await _unitOfWork.ImagenesItems.AgregarAsync(nuevaImagen, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("Imagen consolidada y guardada para el Item {ItemId}", itemId);
+                return ImagenMapper.MapUploadChunkSuccessToDto(urlFinal);
+            }
+
+            _logger.LogInformation("Imagen ya registrada para el Item {ItemId}; se omite duplicado", itemId);
+            return ImagenMapper.MapUploadChunkSuccessToDto(urlFinal, imagenExistente.Id);
         }
         
         return ImagenMapper.MapUploadChunkFailedToDto(chunkIndex, totalChunks);
@@ -224,7 +271,7 @@ public class ItemImageService : IItemImageService
 
     private async Task<ItemImage> ObtenerItemImage(Guid id, bool track = true, CancellationToken cancellationToken = default)
     {
-        ItemImage? imagen = await _unitOfWork.CreadoresImagenes.GetFirstOrDefaultAsync(
+        ItemImage? imagen = await _unitOfWork.ImagenesItems.GetFirstOrDefaultAsync(
             predicate: i => i.Id == id,
             cancellationToken: cancellationToken,
             includeProperties: null,

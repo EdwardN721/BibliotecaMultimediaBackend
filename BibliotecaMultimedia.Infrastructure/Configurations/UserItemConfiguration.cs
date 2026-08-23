@@ -10,8 +10,10 @@ public class UserItemConfiguration : IEntityTypeConfiguration<UserItem>
     {
         builder.ToTable("user_items");
 
+        // Índice parcial: las filas con soft-delete no bloquean re-agregar el mismo item
         builder.HasIndex(u => new { u.UserId, u.ItemId })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
 
         builder.Property(u => u.Status)
             .HasConversion<string>();
@@ -22,7 +24,7 @@ public class UserItemConfiguration : IEntityTypeConfiguration<UserItem>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(ui => ui.Item)
-            .WithMany()
+            .WithMany(i => i.UserItems)
             .HasForeignKey(ui => ui.ItemId)
             .OnDelete(DeleteBehavior.Cascade);
     }

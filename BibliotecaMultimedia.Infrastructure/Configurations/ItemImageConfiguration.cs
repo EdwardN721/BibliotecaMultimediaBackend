@@ -22,6 +22,6 @@ public class ItemImageConfiguration : IEntityTypeConfiguration<ItemImage>
         // Índice Único Parcial: Solo permite un IsPrimary = true por cada ItemId
         builder.HasIndex(ii => ii.ItemId)
             .IsUnique()
-            .HasFilter("\"IsPrimary\" = true");
+            .HasFilter("\"IsPrimary\" = true AND \"DeletedAt\" IS NULL");
     }
 }

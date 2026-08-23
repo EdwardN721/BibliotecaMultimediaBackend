@@ -15,4 +15,7 @@ public record RespuestaUploadChunkDto
     public bool CargaCompletada { get; init; }
     public string Mensaje { get; init; } = string.Empty;
     public string? UrlFinal { get; init; }
+
+    // Id de la imagen consolidada (null si la carga sigue en progreso)
+    public Guid? ImagenId { get; init; }
 }

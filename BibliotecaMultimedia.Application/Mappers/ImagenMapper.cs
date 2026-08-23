@@ -41,13 +41,14 @@ public static class ImagenMapper
         image.IsPrimary = entity.IsPrimary;
     }
 
-    public static RespuestaUploadChunkDto MapUploadChunkSuccessToDto(string urlFinal)
+    public static RespuestaUploadChunkDto MapUploadChunkSuccessToDto(string urlFinal, Guid? imagenId = null)
     {
         return new RespuestaUploadChunkDto
         {
             CargaCompletada = true,
             Mensaje = "Carga y consolidación completa",
-            UrlFinal = urlFinal
+            UrlFinal = urlFinal,
+            ImagenId = imagenId
         };
     }
     

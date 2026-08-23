@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace BibliotecaMultimedia.Infrastructure.Persistence;
 
-// Forzar que los IDs de Identity sean Guid
-public class AppDbContext : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>
+// Usamos la entidad User del dominio para que exista UN solo tipo de usuario
+// (evita columnas Discriminator y dos CLR types mapeando la misma tabla)
+public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {}

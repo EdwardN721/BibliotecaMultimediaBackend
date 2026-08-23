@@ -4,6 +4,7 @@ using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Biblioteca;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
 using BibliotecaMultimedia.Application.Exceptions;
+using BibliotecaMultimedia.Application.Common;
 using BibliotecaMultimedia.Application.Extensions;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.Mappers;
@@ -57,7 +58,7 @@ public class BibliotecaService : IBibliotecaService
             filter: filtroExpresion,
             pageNumber: filtro.PageNumber,
             pageSize: filtro.PageSize,
-            includeProperties: "Item.MediaType,Item.ItemFormats.Format,Item.ItemPlatforms.Platform,Item.ItemGenres.Genre,Item.ItemCreators.Creator,Item.ItemImages",
+            includeProperties: ItemIncludes.DesdeUserItem,
             ordenarPor: filtro.OrdenarPor,
             ordenDescendente: filtro.OrdenDescendente,
             cancellationToken: cancellationToken);
@@ -184,7 +185,7 @@ public class BibliotecaService : IBibliotecaService
         UserItem? userItem = await _unitOfWork.UserItems.GetFirstOrDefaultAsync(
             predicate: u => u.Id == userItemId,
             cancellationToken: cancellationToken,
-            includeProperties: "Item.MediaType,Item.ItemFormats.Format,Item.ItemPlatforms.Platform,Item.ItemGenres.Genre,Item.ItemCreators.Creator,Item.ItemImages",
+            includeProperties: ItemIncludes.DesdeUserItem,
             disableTracking: !track);
 
         if (userItem is null)

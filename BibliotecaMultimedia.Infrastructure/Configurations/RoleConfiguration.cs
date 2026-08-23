@@ -16,6 +16,8 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.HasIndex(r => r.Name).IsUnique();
+        builder.HasIndex(r => r.Name)
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
     }
 }

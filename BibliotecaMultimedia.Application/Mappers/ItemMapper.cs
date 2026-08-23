@@ -17,8 +17,7 @@ public static class ItemMapper
         public string Title { get; init; } = string.Empty;
         public string? Descripcion { get; init; }
         public DateOnly? ReleaseDate { get; init; }
-        public short? Rating { get; init; }
-        public bool IsFavorite { get; init; }
+        public double? RatingPromedio { get; init; }
         public string? IsbnOrUpc { get; init; }
         public string? MainImageUrl { get; init; }
         public DateTimeOffset CreatedAt { get; init; }
@@ -44,8 +43,10 @@ public static class ItemMapper
             Title = i.Title,
             Descripcion = i.Descripcion,
             ReleaseDate = i.ReleaseDate,
-            Rating = i.Rating,
-            IsFavorite = i.IsFavorite,
+            RatingPromedio = i.UserItems!
+                .Where(ui => ui.PersonalRating != null)
+                .Select(ui => (double?)ui.PersonalRating!.Value)
+                .Average(),
             IsbnOrUpc = i.IsbnOrUpc,
             CreatedAt = i.CreatedAt,
             UpdatedAt = i.UpdatedAt,
@@ -95,8 +96,7 @@ public static class ItemMapper
             Title = proyeccion.Title,
             Descripcion = proyeccion.Descripcion,
             ReleaseDate = proyeccion.ReleaseDate,
-            Rating = proyeccion.Rating,
-            IsFavorite = proyeccion.IsFavorite,
+            RatingPromedio = proyeccion.RatingPromedio,
             IsbnOrUpc = proyeccion.IsbnOrUpc,
             CreatedAt = proyeccion.CreatedAt,
             UpdatedAt = proyeccion.UpdatedAt,
@@ -129,8 +129,6 @@ public static class ItemMapper
             Title = itemDto.Title,
             Descripcion = itemDto.Descripcion,
             ReleaseDate = itemDto.ReleaseDate,
-            Rating = itemDto.Rating,
-            IsFavorite = itemDto.IsFavorite,
             IsbnOrUpc = itemDto.IsbnOrUpc,
             Metadata = itemDto.Metadata is null
                 ? null
@@ -147,8 +145,7 @@ public static class ItemMapper
             Title = item.Title,
             Descripcion = item.Descripcion,
             ReleaseDate = item.ReleaseDate,
-            Rating = item.Rating,
-            IsFavorite = item.IsFavorite,
+            RatingPromedio = CalcularRatingPromedio(item),
             IsbnOrUpc = item.IsbnOrUpc,
             CreatedAt = item.CreatedAt,
             UpdatedAt = item.UpdatedAt,
@@ -182,8 +179,6 @@ public static class ItemMapper
         item.Title = itemDto.Title;
         item.Descripcion = itemDto.Descripcion;
         item.ReleaseDate = itemDto.ReleaseDate;
-        item.Rating = itemDto.Rating;
-        item.IsFavorite = itemDto.IsFavorite;
         item.IsbnOrUpc = itemDto.IsbnOrUpc;
         item.Metadata = itemDto.Metadata is null
             ? null
@@ -200,5 +195,15 @@ public static class ItemMapper
 
         return item.ItemImages.FirstOrDefault(i => i.IsPrimary)?.ImageUrl
                ?? item.ItemImages.First().ImageUrl;
+    }
+
+    private static double? CalcularRatingPromedio(Item item)
+    {
+        List<double> calificaciones = (item.UserItems ?? new List<UserItem>())
+            .Where(ui => ui.PersonalRating.HasValue)
+            .Select(ui => (double)ui.PersonalRating!.Value)
+            .ToList();
+
+        return calificaciones.Count > 0 ? calificaciones.Average() : null;
     }
 }

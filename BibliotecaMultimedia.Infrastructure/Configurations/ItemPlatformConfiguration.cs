@@ -13,6 +13,8 @@ public class ItemPlatformConfiguration : IEntityTypeConfiguration<ItemPlatform>
         builder.Property(ip => ip.Id).HasDefaultValueSql("gen_random_uuid()");
 
         // Constraint de unicidad: Un mismo Item no puede repetir la misma Plataforma
-        builder.HasIndex(ip => new { ip.ItemId, ip.PlatformId }).IsUnique();
+        builder.HasIndex(ip => new { ip.ItemId, ip.PlatformId })
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
     }
 }

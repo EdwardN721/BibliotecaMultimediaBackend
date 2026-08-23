@@ -23,12 +23,13 @@ public class UserSessionInterceptor : DbConnectionInterceptor
         await EstablecerUsuarioAsync(connection, cancellationToken);
     }
 
-    public override async Task ConnectionClosedAsync(DbConnection connection, ConnectionEndEventData eventData)
+    public override Task ConnectionClosedAsync(DbConnection connection, ConnectionEndEventData eventData)
     {
-        // Con connection pooling la conexión se reutiliza entre usuarios:
-        // limpiamos la variable de sesión para no filtrar identidad entre requests.
-        await LimpiarUsuarioAsync(connection);
-        await base.ConnectionClosedAsync(connection, eventData);
+        // No limpiamos app.current_user_id aquí: la conexión ya está cerrada
+        // (ejecutar comandos lanzaría "Connection is not open") y Npgsql ya
+        // emite DISCARD ALL al devolver cada conexión al pool, lo que resetea
+        // las variables de sesión y evita filtrar identidad entre requests.
+        return base.ConnectionClosedAsync(connection, eventData);
     }
 
     #region MetodosPrivados
@@ -52,24 +53,6 @@ public class UserSessionInterceptor : DbConnectionInterceptor
         {
             // No interrumpimos la operación por un fallo de sesión; solo registramos
             _logger.LogError(ex, "No se pudo establecer app.current_user_id para el usuario {UserId}", userId);
-        }
-    }
-
-    private async Task LimpiarUsuarioAsync(DbConnection connection)
-    {
-        try
-        {
-            using DbCommand comando = connection.CreateCommand();
-            comando.CommandText = "RESET app.current_user_id;";
-            await comando.ExecuteNonQueryAsync(CancellationToken.None);
-        }
-        catch (ObjectDisposedException)
-        {
-            // La conexión ya fue liberada; nada que limpiar
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "No se pudo limpiar app.current_user_id al cerrar la conexión");
         }
     }
 

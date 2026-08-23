@@ -16,6 +16,8 @@ public class MediaTypeConfiguration : IEntityTypeConfiguration<MediaType>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.HasIndex(m => m.Name).IsUnique();
+        builder.HasIndex(m => m.Name)
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
     }
 }

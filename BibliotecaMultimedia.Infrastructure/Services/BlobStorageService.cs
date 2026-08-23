@@ -12,12 +12,23 @@ namespace BibliotecaMultimedia.Infrastructure.Services;
 public class BlobStorageService : IBlobStorageService
 {
     private readonly BlobServiceClient _blobServiceClient;
-    private readonly string _containerName = "biblioteca-multimedia";
-    
+    private readonly string _containerName;
+
+    // Verificación del contenedor una única vez por vida del servicio (singleton):
+    // antes se llamaba CreateIfNotExists en CADA chunk (un round-trip extra por fragmento)
+    private readonly Task _contenedorInicializado;
+
     public BlobStorageService(string connectionString, string blobContainerString)
     {
         _blobServiceClient = new BlobServiceClient(connectionString);
         _containerName = blobContainerString;
+        _contenedorInicializado = InicializarContenedorAsync();
+    }
+
+    private async Task InicializarContenedorAsync()
+    {
+        BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+        await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
     }
 
     /// <summary>
@@ -31,14 +42,14 @@ public class BlobStorageService : IBlobStorageService
     /// <param name="base64BlockId">Identificador único del fragmento. Azure exige que tenga longitud fija y esté en Base64.</param>
     /// <param name="chunkStream">El flujo de datos (bytes) que contiene la porción de la imagen.</param>
     /// <param name="cancellationToken">Token para cancelar la operación asíncrona.</param>
-    public async Task SubirArchivosChunkAsync(string blobName, string base64BlockId, Stream chunkStream, 
+    public async Task SubirArchivosChunkAsync(string blobName, string base64BlockId, Stream chunkStream,
         CancellationToken cancellationToken = default)
     {
+        await _contenedorInicializado;
         BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-        await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: cancellationToken);
-        
+
         BlockBlobClient blockBlobClient = containerClient.GetBlockBlobClient(blobName);
-        
+
         await blockBlobClient.StageBlockAsync(base64BlockId, chunkStream, cancellationToken: cancellationToken);
     }
 
@@ -68,6 +79,7 @@ public class BlobStorageService : IBlobStorageService
     /// <inheritdoc />
     public async Task EliminarArchivoAsync(string blobName, CancellationToken cancellationToken = default)
     {
+        await _contenedorInicializado;
         BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
         BlockBlobClient blockBlobClient = containerClient.GetBlockBlobClient(blobName);
 

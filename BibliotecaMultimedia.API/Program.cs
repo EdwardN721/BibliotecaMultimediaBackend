@@ -1,11 +1,16 @@
 using System.Text.Json.Serialization;
 using BibliotecaMultimedia.API.Extensions;
+using BibliotecaMultimedia.API.Filters;
 using BibliotecaMultimedia.Infrastructure.Persistence;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        // Valida los DTOs con FluentValidation antes de entrar a la acción
+        options.Filters.Add<AutoValidacionFiltro>();
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());

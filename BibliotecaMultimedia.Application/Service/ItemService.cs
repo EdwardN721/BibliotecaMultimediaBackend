@@ -5,6 +5,7 @@ using BibliotecaMultimedia.Domain.Constants;
 using BibliotecaMultimedia.Domain.Interfaces;
 using BibliotecaMultimedia.Application.Mappers;
 using BibliotecaMultimedia.Application.Exceptions;
+using BibliotecaMultimedia.Application.Common;
 using BibliotecaMultimedia.Application.Extensions;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.DTOs.Eventos;
@@ -82,7 +83,7 @@ public class ItemService : IItemService
     public async Task<IEnumerable<RespuestaItemDto>> ObtenerItems(CancellationToken cancellationToken = default)
     {
         List<Item> items = (await _unitOfWork.Items.ObtenerTodosAsync(
-            includeProperties: "MediaType,ItemFormats.Format,ItemPlatforms.Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages",
+            includeProperties: ItemIncludes.DesdeItem,
             cancellationToken)).ToList();
 
         // Orden determinista: la BD no garantiza orden sin ORDER BY
@@ -98,7 +99,7 @@ public class ItemService : IItemService
         if (cantidad > 50) cantidad = 50;
 
         List<Item> items = (await _unitOfWork.Items.ObtenerTodosAsync(
-            includeProperties: "MediaType,ItemFormats.Format,ItemPlatforms.Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages",
+            includeProperties: ItemIncludes.DesdeItem,
             cancellationToken)).ToList();
 
         // Novedades: los últimos agregados al catálogo. Orden determinista por CreatedAt + Id
@@ -110,6 +111,33 @@ public class ItemService : IItemService
 
         _logger.LogInformation("Items destacados obtenidos: {Count}", destacados.Count());
         return destacados;
+    }
+
+    public async Task<IEnumerable<RespuestaDistribucionItemDto>> ObtenerDistribucionPorTipoMedio(
+        CancellationToken cancellationToken = default)
+    {
+        // GROUP BY en la base de datos: no traemos el catálogo completo para
+        // agregarlo en memoria del cliente o del servidor
+        List<(string Clave, int Cantidad)> conteos = await _unitOfWork.Items.ContarAgrupadoAsync(
+            i => i.MediaType!.Name,
+            filtro: null,
+            cancellationToken);
+
+        int total = conteos.Sum(c => c.Cantidad);
+
+        List<RespuestaDistribucionItemDto> distribucion = conteos
+            .OrderByDescending(c => c.Cantidad)
+            .ThenBy(c => c.Clave)
+            .Select(c => new RespuestaDistribucionItemDto
+            {
+                Nombre = string.IsNullOrEmpty(c.Clave) ? "Otros" : c.Clave,
+                Cantidad = c.Cantidad,
+                Porcentaje = total == 0 ? 0 : Math.Round(c.Cantidad * 100.0 / total, 1),
+            })
+            .ToList();
+
+        _logger.LogInformation("Distribución por tipo de medio: {Grupos} grupos, {Total} items", distribucion.Count, total);
+        return distribucion;
     }
 
     public async Task<RespuestaItemDto> ObtenerItemPorId(Guid id, CancellationToken cancellationToken = default)
@@ -186,8 +214,7 @@ public class ItemService : IItemService
         }
     }
 
-    public async Task ActualizarItem(Guid id, PeticionActualizarItemDto itemDto, CancellationToken cancellationToken = default)
-    {
+    public async Task ActualizarItem(Guid id, PeticionActualizarItemDto itemDto, CancellationToken cancellationToken = default)    {
         await ValidarReferenciasActualizarAsync(itemDto, cancellationToken);
         Item item = await ObtenerItem(id, track: true, cancellationToken);
 
@@ -241,21 +268,18 @@ public class ItemService : IItemService
             throw new NotFoundException($"El tipo de medio {mediaTypeId} no existe.");
         }
 
-        if (formatIds.Count == 0)
+        if (formatIds.Count > 0)
         {
-            throw new BusinessRuleException("El ítem debe tener al menos un formato.");
+            HashSet<Guid> formatosExistentes = (await _unitOfWork.Formatos.FindAsync(
+                f => formatIds.Contains(f.Id), cancellationToken))
+                .Select(f => f.Id).ToHashSet();
+
+            Guid formatoFaltante = formatIds.FirstOrDefault(id => !formatosExistentes.Contains(id));
+            if (formatoFaltante != Guid.Empty)
+            {
+                throw new NotFoundException($"El formato {formatoFaltante} no existe.");
+            }
         }
-
-        HashSet<Guid> formatosExistentes = (await _unitOfWork.Formatos.FindAsync(
-            f => formatIds.Contains(f.Id), cancellationToken))
-            .Select(f => f.Id).ToHashSet();
-
-        Guid formatoFaltante = formatIds.FirstOrDefault(id => !formatosExistentes.Contains(id));
-        if (formatoFaltante != Guid.Empty)
-        {
-            throw new NotFoundException($"El formato {formatoFaltante} no existe.");
-        }
-
         if (platformIds.Count > 0)
         {
             HashSet<Guid> plataformasExistentes = (await _unitOfWork.Plataformas.FindAsync(
@@ -349,7 +373,7 @@ public class ItemService : IItemService
         Item? item = await _unitOfWork.Items.GetFirstOrDefaultAsync(
             predicate: i => i.Id == id,
             cancellationToken: cancellationToken,
-            includeProperties: "MediaType,ItemFormats.Format,ItemPlatforms.Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages",
+            includeProperties: ItemIncludes.DesdeItem,
             disableTracking: !track
         );
         if (item == null)

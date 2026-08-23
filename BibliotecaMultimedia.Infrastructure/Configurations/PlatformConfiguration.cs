@@ -16,6 +16,8 @@ public class PlatformConfiguration : IEntityTypeConfiguration<Platform>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.HasIndex(p => p.Name).IsUnique();
+        builder.HasIndex(p => p.Name)
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
     }
 }

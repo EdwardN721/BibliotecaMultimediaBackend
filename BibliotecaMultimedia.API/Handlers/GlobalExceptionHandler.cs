@@ -17,8 +17,23 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        // 1. Creamos logs para saber donde hubo error
-        _logger.LogError(exception, "Ocurrió un error: {Message}", exception.Message);
+        // 1. Creamos logs: los errores esperados (validación, no encontrado, conflicto)
+        //    son Warning; lo inesperado sí es Error para alertar en operación
+        bool esEsperado = exception is ValidationAppException
+            or IdentityUserException
+            or UnauthorizedAppException
+            or NotFoundException
+            or BusinessRuleException
+            or OperationCanceledException;
+
+        if (esEsperado)
+        {
+            _logger.LogWarning("Solicitud rechazada ({Tipo}): {Message}", exception.GetType().Name, exception.Message);
+        }
+        else
+        {
+            _logger.LogError(exception, "Ocurrió un error: {Message}", exception.Message);
+        }
 
         // 2. Dar formato estandarizado
         ProblemDetails problemDetails = new ProblemDetails

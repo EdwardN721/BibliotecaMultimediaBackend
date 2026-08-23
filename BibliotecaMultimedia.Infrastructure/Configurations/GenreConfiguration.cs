@@ -19,6 +19,8 @@ public class GenreConfiguration: IEntityTypeConfiguration<Genre>
         builder.Property(g => g.Description)
             .HasMaxLength(500);
 
-        builder.HasIndex(g => g.Name).IsUnique();
+        builder.HasIndex(g => g.Name)
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
     }
 }

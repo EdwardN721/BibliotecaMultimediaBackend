@@ -14,6 +14,7 @@ public class ItemCreatorConfiguration : IEntityTypeConfiguration<ItemCreator>
 
         // Constraint Único: Evita duplicidad lógica (Mismo Item, Creador y Rol)
         builder.HasIndex(ic => new { ic.ItemId, ic.CreatorId, ic.RoleId })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
     }
 }

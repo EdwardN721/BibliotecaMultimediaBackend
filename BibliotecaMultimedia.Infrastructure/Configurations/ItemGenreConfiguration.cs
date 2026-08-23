@@ -13,6 +13,8 @@ public class ItemGenreConfiguration : IEntityTypeConfiguration<ItemGenre>
         builder.Property(ig => ig.Id).HasDefaultValueSql("gen_random_uuid()");
 
         // Constraint de unicidad: Un mismo Item no puede repetir el mismo Genero
-        builder.HasIndex(ig => new { ig.ItemId, ig.GenreId }).IsUnique();
+        builder.HasIndex(ig => new { ig.ItemId, ig.GenreId })
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
     }
 }
