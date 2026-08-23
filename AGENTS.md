@@ -14,7 +14,7 @@ dotnet ef migrations add <Nombre> -p BibliotecaMultimedia.Infrastructure -s Bibl
 ## Configuración y secretos
 
 - `BibliotecaMultimedia.API/appsettings.json` y `appsettings.Development.json` están en `.gitignore`: nunca existen en un clone limpio ni deben commitearse.
-- Claves requeridas para arrancar: `ConnectionStrings:DefaultConnection` (PostgreSQL), `ConnectionStrings:AzureBlobStorage`, `ConnectionStrings:AzureBlobStorageContainer`, `ConnectionStrings:AzureServiceBus`, `Azure:ServiceBus:TopicName`, `Jwt:Issuer/Audience/Key`. Sin las de Azure, la DI lanza excepción al construir los singletons.
+- Claves requeridas para arrancar: `ConnectionStrings:DefaultConnection` (PostgreSQL), `ConnectionStrings:AzureBlobStorage`, `ConnectionStrings:AzureBlobStorageContainer`, `ConnectionStrings:AzureServiceBus`, `Azure:ServiceBus:QueueName`, `Jwt:Issuer/Audience/Key`. Sin las de Azure, la DI lanza excepción al construir los singletons.
 - Al arrancar, `DatabaseSeeder.SeedCatalogoAsync` siembra catálogos (fallos solo se loguean como warning).
 - En Development la UI de OpenAPI es Scalar en `/scalar/v1`.
 

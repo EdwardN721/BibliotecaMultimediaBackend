@@ -59,11 +59,11 @@ public static class InfrastructureServiceExtension
             string busConnectionString = configuration.GetConnectionString("AzureServiceBus")
                                          ?? throw new BusinessRuleException("La cadena de conexión de AzureServiceBus no está configurada.");
             
-            // Extraemos el nombre del Topic
-            string topicName = configuration["Azure:ServiceBus:TopicName"] 
-                               ?? throw new BusinessRuleException("El TopicName de Azure Service Bus no está configurado.");
+            // Extraemos el nombre de la cola
+            string queueName = configuration["Azure:ServiceBus:QueueName"]
+                               ?? throw new BusinessRuleException("El QueueName de Azure Service Bus no está configurado.");
 
-            return new ServiceBus(busConnectionString, topicName);
+            return new ServiceBus(busConnectionString, queueName);
         });
 
         return services;
