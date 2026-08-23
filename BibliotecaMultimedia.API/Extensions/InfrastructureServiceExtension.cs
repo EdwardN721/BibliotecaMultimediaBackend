@@ -43,28 +43,29 @@ public static class InfrastructureServiceExtension
 
     public static IServiceCollection AddExternalServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // 1. Registrar Blob Storage como Singleton (es thread-safe y recomendado por Microsoft)
-        services.AddSingleton<IBlobStorageService>(_ => 
-        {
-            string blobConnectionString = configuration.GetConnectionString("AzureBlobStorage") 
-                                          ?? throw new BusinessRuleException("La cadena de conexión de AzureBlobStorage no está configurada.");
-            string blobContainerString = configuration["ConnectionStrings.AzureBlobStorageContainer"] ?? throw new BusinessRuleException("El Contenedor de Azure BlobStorage no está configurado.");
-            
-            return new BlobStorageService(blobConnectionString, blobContainerString);
-        });
+        // Validación temprana (fail-fast): si falta alguna clave de Azure la API
+        // no arranca. Evita 409 dispersos en runtime cuando un endpoint resuelve
+        // por primera vez el singleton con la factory perezosa.
+        string blobConnectionString = configuration.GetConnectionString("AzureBlobStorage")
+                                      ?? throw new BusinessRuleException("La cadena de conexión de AzureBlobStorage no está configurada.");
 
-        // 2. Registrar Service Bus como Singleton
-        services.AddSingleton<IServiceBus>(_ => 
-        {
-            string busConnectionString = configuration.GetConnectionString("AzureServiceBus")
-                                         ?? throw new BusinessRuleException("La cadena de conexión de AzureServiceBus no está configurada.");
-            
-            // Extraemos el nombre de la cola
-            string queueName = configuration["Azure:ServiceBus:QueueName"]
-                               ?? throw new BusinessRuleException("El QueueName de Azure Service Bus no está configurado.");
+        // GetConnectionString equivale a configuration["ConnectionStrings:<nombre>"]
+        string blobContainerString = configuration.GetConnectionString("AzureBlobStorageContainer")
+                                     ?? throw new BusinessRuleException("El Contenedor de Azure BlobStorage no está configurado.");
 
-            return new ServiceBus(busConnectionString, queueName);
-        });
+        string busConnectionString = configuration.GetConnectionString("AzureServiceBus")
+                                     ?? throw new BusinessRuleException("La cadena de conexión de AzureServiceBus no está configurada.");
+
+        string queueName = configuration["Azure:ServiceBus:QueueName"]
+                           ?? throw new BusinessRuleException("El QueueName de Azure Service Bus no está configurado.");
+
+        // Blob Storage como Singleton: es thread-safe y su reutilización es la
+        // práctica recomendada por Microsoft.
+        services.AddSingleton<IBlobStorageService>(_ =>
+            new BlobStorageService(blobConnectionString, blobContainerString));
+
+        services.AddSingleton<IServiceBus>(_ =>
+            new ServiceBus(busConnectionString, queueName));
 
         return services;
     }
