@@ -10,6 +10,8 @@ public class UserItemConfiguration : IEntityTypeConfiguration<UserItem>
     {
         builder.ToTable("user_items");
 
+        builder.Property(ui => ui.Id).HasDefaultValueSql("gen_random_uuid()");
+
         // Índice parcial: las filas con soft-delete no bloquean re-agregar el mismo item
         builder.HasIndex(u => new { u.UserId, u.ItemId })
             .IsUnique()
