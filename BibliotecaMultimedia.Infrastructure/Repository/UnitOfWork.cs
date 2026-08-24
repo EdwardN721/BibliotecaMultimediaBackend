@@ -15,9 +15,11 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<Genre>? _generos;
     private IGenericRepository<Item>? _items;
     private IGenericRepository<ItemCreator>? _creadoresItems;
+    private IGenericRepository<ItemFormat>? _formatosItems;
     private IGenericRepository<ItemGenre>? _creadoresGeneros;
     private IGenericRepository<ItemImage>? _creadoresImagenes;
     private IGenericRepository<MediaType>? _tiposMedia;
+    private IGenericRepository<ItemPlatform>? _plataformasItems;
     private IGenericRepository<Platform>? _plataformas;
     private IGenericRepository<Role>? _roles;
     private IGenericRepository<UserItem>? _userItems;
@@ -52,6 +54,11 @@ public class UnitOfWork : IUnitOfWork
         get { return _creadoresItems ??= new GenericRepository<ItemCreator>(_context); }
     }
 
+    public IGenericRepository<ItemFormat> ItemsFormatos
+    {
+        get { return _formatosItems ??= new GenericRepository<ItemFormat>(_context); }
+    }
+
     public IGenericRepository<ItemGenre> ItemsGeneros
     {
         get { return _creadoresGeneros ??= new GenericRepository<ItemGenre>(_context); }
@@ -65,6 +72,11 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<MediaType> TiposMedia
     {
         get { return _tiposMedia ??= new GenericRepository<MediaType>(_context); }
+    }
+
+    public IGenericRepository<ItemPlatform> ItemsPlataformas
+    {
+        get { return _plataformasItems ??= new GenericRepository<ItemPlatform>(_context); }
     }
 
     public IGenericRepository<Platform> Plataformas

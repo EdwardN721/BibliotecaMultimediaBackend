@@ -228,7 +228,7 @@ public class ItemService : IItemService
         }
 
         item.UpdateEntity(itemDto);
-        SincronizarRelaciones(item, itemDto, defaultRoleId);
+        await SincronizarRelacionesAsync(item, itemDto, defaultRoleId, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Item actualizado: {Id} - {Nombre}", item.Id, item.Title);
     }
@@ -320,51 +320,59 @@ public class ItemService : IItemService
         }
     }
 
-    private static void SincronizarRelaciones(Item item, PeticionActualizarItemDto itemDto, Guid defaultRoleId)
+    private async Task SincronizarRelacionesAsync(Item item, PeticionActualizarItemDto itemDto, Guid defaultRoleId, CancellationToken cancellationToken)
     {
         ICollection<ItemGenre> generos = item.ItemGenres!;
         ICollection<ItemCreator> creadores = item.ItemCreators!;
         ICollection<ItemFormat> formatos = item.ItemFormats!;
         ICollection<ItemPlatform> plataformas = item.ItemPlatforms!;
 
-        List<Guid> generosActuales = generos.Select(g => g.GenreId).ToList();
-        foreach (Guid genreId in itemDto.GenreIds.Where(id => !generosActuales.Contains(id)))
-        {
-            generos.Add(new ItemGenre { GenreId = genreId, ItemId = item.Id });
-        }
+        // Bajas: quitar de las colecciones tracked (el interceptor de auditoría las convierte en soft delete)
         foreach (ItemGenre genero in generos.Where(g => !itemDto.GenreIds.Contains(g.GenreId)).ToList())
         {
             generos.Remove(genero);
         }
 
-        List<Guid> creadoresActuales = creadores.Select(c => c.CreatorId).ToList();
-        foreach (Guid creatorId in itemDto.CreatorIds.Where(id => !creadoresActuales.Contains(id)))
-        {
-            creadores.Add(new ItemCreator { CreatorId = creatorId, ItemId = item.Id, RoleId = defaultRoleId });
-        }
         foreach (ItemCreator creador in creadores.Where(c => !itemDto.CreatorIds.Contains(c.CreatorId)).ToList())
         {
             creadores.Remove(creador);
         }
 
-        List<Guid> formatosActuales = formatos.Select(f => f.FormatId).ToList();
-        foreach (Guid formatId in itemDto.FormatIds.Where(id => !formatosActuales.Contains(id)))
-        {
-            formatos.Add(new ItemFormat { FormatId = formatId, ItemId = item.Id });
-        }
         foreach (ItemFormat formato in formatos.Where(f => !itemDto.FormatIds.Contains(f.FormatId)).ToList())
         {
             formatos.Remove(formato);
         }
 
-        List<Guid> plataformasActuales = plataformas.Select(p => p.PlatformId).ToList();
-        foreach (Guid platformId in itemDto.PlatformIds.Where(id => !plataformasActuales.Contains(id)))
-        {
-            plataformas.Add(new ItemPlatform { PlatformId = platformId, ItemId = item.Id });
-        }
         foreach (ItemPlatform plataforma in plataformas.Where(p => !itemDto.PlatformIds.Contains(p.PlatformId)).ToList())
         {
             plataformas.Remove(plataforma);
+        }
+
+        // Altas: registrar por repositorio (Add explícito). No basta con agregar a la
+        // navegación: como BaseEntity inicializa Id = Guid.NewGuid(), EF creería que la
+        // fila ya existe y emitiría un UPDATE contra una fila inexistente (error 409).
+        HashSet<Guid> generosActuales = generos.Select(g => g.GenreId).ToHashSet();
+        foreach (Guid genreId in itemDto.GenreIds.Where(id => !generosActuales.Contains(id)))
+        {
+            await _unitOfWork.ItemsGeneros.AgregarAsync(new ItemGenre { GenreId = genreId, ItemId = item.Id }, cancellationToken);
+        }
+
+        HashSet<Guid> creadoresActuales = creadores.Select(c => c.CreatorId).ToHashSet();
+        foreach (Guid creatorId in itemDto.CreatorIds.Where(id => !creadoresActuales.Contains(id)))
+        {
+            await _unitOfWork.ItemsCreadores.AgregarAsync(new ItemCreator { CreatorId = creatorId, ItemId = item.Id, RoleId = defaultRoleId }, cancellationToken);
+        }
+
+        HashSet<Guid> formatosActuales = formatos.Select(f => f.FormatId).ToHashSet();
+        foreach (Guid formatId in itemDto.FormatIds.Where(id => !formatosActuales.Contains(id)))
+        {
+            await _unitOfWork.ItemsFormatos.AgregarAsync(new ItemFormat { FormatId = formatId, ItemId = item.Id }, cancellationToken);
+        }
+
+        HashSet<Guid> plataformasActuales = plataformas.Select(p => p.PlatformId).ToHashSet();
+        foreach (Guid platformId in itemDto.PlatformIds.Where(id => !plataformasActuales.Contains(id)))
+        {
+            await _unitOfWork.ItemsPlataformas.AgregarAsync(new ItemPlatform { PlatformId = platformId, ItemId = item.Id }, cancellationToken);
         }
     }
 

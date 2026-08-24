@@ -9,12 +9,13 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Genre> Generos { get; }
     IGenericRepository<Item> Items { get; }
     IGenericRepository<ItemCreator> ItemsCreadores { get; }
+    IGenericRepository<ItemFormat> ItemsFormatos { get; }
     IGenericRepository<ItemGenre> ItemsGeneros { get; }
     IGenericRepository<ItemImage> ImagenesItems { get; }
+    IGenericRepository<ItemPlatform> ItemsPlataformas { get; }
     IGenericRepository<MediaType> TiposMedia { get; }
     IGenericRepository<Platform> Plataformas { get; }
-    IGenericRepository<Role> CreatorRoles { get; }
-    IGenericRepository<UserItem> UserItems { get; }
+    IGenericRepository<Role> CreatorRoles { get; }    IGenericRepository<UserItem> UserItems { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     // Gestión de Transacciones especificas

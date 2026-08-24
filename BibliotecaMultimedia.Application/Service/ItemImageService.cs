@@ -15,10 +15,15 @@ namespace BibliotecaMultimedia.Application.Service;
 
 public class ItemImageService : IItemImageService
 {
-    // Whitelist de tipos MIME aceptados para imágenes
-    private static readonly HashSet<string> ContentTypesPermitidos = new(StringComparer.OrdinalIgnoreCase)
+    // Content-Type resuelto desde la extensión: algunos clientes suben los
+    // fragmentos como application/octet-stream y no se puede confiar en el header
+    private static readonly Dictionary<string, string> ContentTypePorExtension = new(StringComparer.OrdinalIgnoreCase)
     {
-        "image/jpeg", "image/png", "image/webp", "image/gif",
+        [".jpg"] = "image/jpeg",
+        [".jpeg"] = "image/jpeg",
+        [".png"] = "image/png",
+        [".webp"] = "image/webp",
+        [".gif"] = "image/gif",
     };
 
     private static readonly HashSet<string> ExtensionesPermitidas = new(StringComparer.OrdinalIgnoreCase)
@@ -188,11 +193,6 @@ public class ItemImageService : IItemImageService
             throw new BusinessRuleException("Los índices de fragmentos no son válidos.");
         }
 
-        if (!ContentTypesPermitidos.Contains(contentType))
-        {
-            throw new BusinessRuleException($"Tipo de archivo no permitido ({contentType}). Solo se aceptan imágenes JPEG, PNG, WEBP o GIF.");
-        }
-
         if (totalChunks > MaximoChunksPorArchivo)
         {
             throw new BusinessRuleException($"El archivo excede el máximo de {MaximoChunksPorArchivo} fragmentos permitidos.");
@@ -210,10 +210,14 @@ public class ItemImageService : IItemImageService
         {
             throw new BusinessRuleException($"Extensión de archivo no permitida ({extension}). Solo se aceptan imágenes JPEG, PNG, WEBP o GIF.");
         }
-        
+
+        // El Content-Type real se deduce de la extensión (ya validada): el header
+        // del cliente puede venir vacío o como application/octet-stream
+        string tipoContenido = ContentTypePorExtension.GetValueOrDefault(extension, "application/octet-stream");
+
         string blobName = $"items/{itemId}/images/{nombreSeguro}";
         string blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(chunkIndex.ToString("d6")));
-        
+
         await _blobStorageService.SubirArchivosChunkAsync(blobName, blockId, chunkStream, cancellationToken);
 
         if (chunkIndex == totalChunks - 1)
@@ -221,7 +225,7 @@ public class ItemImageService : IItemImageService
             IEnumerable<string> todosLosBloques = Enumerable.Range(0, totalChunks)
                 .Select(i => Convert.ToBase64String(Encoding.UTF8.GetBytes(i.ToString("d6"))));
 
-            string urlFinal = await _blobStorageService.ConsolidarChunksAsync(blobName, todosLosBloques, contentType, cancellationToken);
+            string urlFinal = await _blobStorageService.ConsolidarChunksAsync(blobName, todosLosBloques, tipoContenido, cancellationToken);
 
             // Idempotencia: si la misma imagen (mismo itemId + fileName) ya fue
             // registrada, no insertamos una fila duplicada en la BD
