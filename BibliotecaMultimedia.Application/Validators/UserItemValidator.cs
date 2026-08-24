@@ -21,6 +21,20 @@ public class AgregarABibliotecaValidator : AbstractValidator<PeticionAgregarABib
         RuleFor(x => x.Review)
             .MaximumLength(2000).WithMessage("La reseña no puede exceder los 2000 caracteres.")
             .When(x => x.Review is not null);
+
+        RuleForEach(x => x.OwnedFormatIds)
+            .NotEmpty().WithMessage("Los formatos propios deben ser identificadores válidos.");
+        RuleFor(x => x.OwnedFormatIds)
+            .Must(ids => ids.Count == ids.Distinct().Count())
+            .WithMessage("Los formatos propios no pueden repetirse.")
+            .When(x => x.OwnedFormatIds.Count > 0);
+
+        RuleForEach(x => x.OwnedPlatformIds)
+            .NotEmpty().WithMessage("Las plataformas propias deben ser identificadores válidos.");
+        RuleFor(x => x.OwnedPlatformIds)
+            .Must(ids => ids.Count == ids.Distinct().Count())
+            .WithMessage("Las plataformas propias no pueden repetirse.")
+            .When(x => x.OwnedPlatformIds.Count > 0);
     }
 }
 
@@ -39,5 +53,21 @@ public class ActualizarUserItemValidator : AbstractValidator<PeticionActualizarU
         RuleFor(x => x.Review)
             .MaximumLength(2000).WithMessage("La reseña no puede exceder los 2000 caracteres.")
             .When(x => x.Review is not null);
+
+        RuleForEach(x => x.OwnedFormatIds)
+            .NotEmpty().WithMessage("Los formatos propios deben ser identificadores válidos.")
+            .When(x => x.OwnedFormatIds is not null);
+        RuleFor(x => x.OwnedFormatIds!)
+            .Must(ids => ids.Count == ids.Distinct().Count())
+            .WithMessage("Los formatos propios no pueden repetirse.")
+            .When(x => x.OwnedFormatIds is not null && x.OwnedFormatIds.Count > 0);
+
+        RuleForEach(x => x.OwnedPlatformIds)
+            .NotEmpty().WithMessage("Las plataformas propias deben ser identificadores válidos.")
+            .When(x => x.OwnedPlatformIds is not null);
+        RuleFor(x => x.OwnedPlatformIds!)
+            .Must(ids => ids.Count == ids.Distinct().Count())
+            .WithMessage("Las plataformas propias no pueden repetirse.")
+            .When(x => x.OwnedPlatformIds is not null && x.OwnedPlatformIds.Count > 0);
     }
 }

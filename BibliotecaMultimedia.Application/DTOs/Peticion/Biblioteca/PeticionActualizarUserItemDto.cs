@@ -12,4 +12,10 @@ public record PeticionActualizarUserItemDto
     public bool? IsPrivate { get; init; }
     public DateTimeOffset? StartedAt { get; init; }
     public DateTimeOffset? FinishedAt { get; init; }
+
+    /// <summary>Sincroniza los formatos propios del título (null = no tocar).</summary>
+    public List<Guid>? OwnedFormatIds { get; init; }
+
+    /// <summary>Sincroniza las plataformas propias del título (null = no tocar).</summary>
+    public List<Guid>? OwnedPlatformIds { get; init; }
 };

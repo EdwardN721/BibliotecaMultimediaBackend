@@ -6,6 +6,7 @@ using BibliotecaMultimedia.Infrastructure.Persistence;
 using BibliotecaMultimedia.Infrastructure.Repository;
 using BibliotecaMultimedia.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BibliotecaMultimedia.API.Extensions;
 
@@ -64,8 +65,8 @@ public static class InfrastructureServiceExtension
         services.AddSingleton<IBlobStorageService>(_ =>
             new BlobStorageService(blobConnectionString, blobContainerString));
 
-        services.AddSingleton<IServiceBus>(_ =>
-            new ServiceBus(busConnectionString, queueName));
+        services.AddSingleton<IServiceBus>(sp =>
+            new ServiceBus(busConnectionString, queueName, sp.GetRequiredService<ILogger<ServiceBus>>()));
 
         return services;
     }

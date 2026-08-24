@@ -64,6 +64,25 @@ public static class UserItemMapper
                 ?.OrderByDescending(i => i.IsPrimary)
                 .Select(i => i.ImageUrl)
                 .FirstOrDefault(),
+            OwnedFormats = userItem.UserItemFormats
+                ?.Select(f => f.Format?.Name ?? string.Empty)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .ToList() ?? new List<string>(),
+            OwnedFormatIds = userItem.UserItemFormats
+                ?.Select(f => f.FormatId)
+                .ToList() ?? new List<Guid>(),
+            OwnedPlatforms = userItem.UserItemPlatforms
+                ?.Select(p => p.Platform?.Name ?? string.Empty)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .ToList() ?? new List<string>(),
+            OwnedPlatformIds = userItem.UserItemPlatforms
+                ?.Select(p => p.PlatformId)
+                .ToList() ?? new List<Guid>(),
+            PrestamoActivoA = userItem.Prestamos
+                ?.Where(p => p.FechaDevolucion == null)
+                .OrderByDescending(p => p.FechaPrestamo)
+                .Select(p => p.NombrePersona)
+                .FirstOrDefault(),
             Status = userItem.Status,
             Progress = userItem.Progress,
             IsFavorite = userItem.IsFavorite,
@@ -83,5 +102,25 @@ public static class UserItemMapper
         return items is null
             ? Enumerable.Empty<RespuestaUserItemDto>()
             : items.Select(item => item.MapToDto());
+    }
+
+    public static RespuestaPrestamoDto MapToDto(this Prestamo prestamo)
+    {
+        return new RespuestaPrestamoDto
+        {
+            Id = prestamo.Id,
+            UserItemId = prestamo.UserItemId,
+            NombrePersona = prestamo.NombrePersona,
+            FechaPrestamo = prestamo.FechaPrestamo,
+            FechaDevolucion = prestamo.FechaDevolucion,
+            Notas = prestamo.Notas,
+        };
+    }
+
+    public static IEnumerable<RespuestaPrestamoDto> MapToDto(this IEnumerable<Prestamo>? prestamos)
+    {
+        return prestamos is null
+            ? Enumerable.Empty<RespuestaPrestamoDto>()
+            : prestamos.Select(prestamo => prestamo.MapToDto());
     }
 }

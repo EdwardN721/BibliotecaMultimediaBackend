@@ -20,6 +20,9 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<Role> CreatorRoles => Set<Role>();
     public DbSet<Genre> Genres => Set<Genre>();
     public DbSet<UserItem> UserItems => Set<UserItem>();
+    public DbSet<UserItemFormat> UserItemFormats => Set<UserItemFormat>();
+    public DbSet<UserItemPlatform> UserItemPlatforms => Set<UserItemPlatform>();
+    public DbSet<Prestamo> Prestamos => Set<Prestamo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

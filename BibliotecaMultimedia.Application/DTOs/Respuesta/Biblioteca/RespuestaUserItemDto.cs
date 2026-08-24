@@ -14,6 +14,18 @@ public record RespuestaUserItemDto
     public List<string> Creators { get; init; } = new List<string>();
     public string? ImageUrl { get; init; }
 
+    /// <summary>Nombres de los formatos en que el usuario posee el título.</summary>
+    public List<string> OwnedFormats { get; init; } = new List<string>();
+    /// <summary>Ids de los formatos propios del usuario.</summary>
+    public List<Guid> OwnedFormatIds { get; init; } = new List<Guid>();
+    /// <summary>Nombres de las plataformas/consolas en que el usuario posee el título.</summary>
+    public List<string> OwnedPlatforms { get; init; } = new List<string>();
+    /// <summary>Ids de las plataformas propias del usuario.</summary>
+    public List<Guid> OwnedPlatformIds { get; init; } = new List<Guid>();
+
+    /// <summary>Nombre de la persona que tiene el título prestado ahora mismo (null si no está prestado).</summary>
+    public string? PrestamoActivoA { get; init; }
+
     public ConsumptionStatus Status { get; init; } = ConsumptionStatus.Pendiente;
     public string? Progress { get; init; }
     public bool IsFavorite { get; init; }

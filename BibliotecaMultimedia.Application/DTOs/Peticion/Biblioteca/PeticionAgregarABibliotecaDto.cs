@@ -13,4 +13,10 @@ public record PeticionAgregarABibliotecaDto
     public bool IsPrivate { get; init; } = false;
     public DateTimeOffset? StartedAt { get; init; }
     public DateTimeOffset? FinishedAt { get; init; }
+
+    /// <summary>Formatos en que el usuario posee el título (ej: Físico, Digital).</summary>
+    public List<Guid> OwnedFormatIds { get; init; } = new();
+
+    /// <summary>Plataformas/consolas en que el usuario posee el título (ej: PS5, Spotify).</summary>
+    public List<Guid> OwnedPlatformIds { get; init; } = new();
 };

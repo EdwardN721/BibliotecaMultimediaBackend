@@ -10,7 +10,7 @@ public static class ItemIncludes
     public const string DesdeItem =
         "MediaType,ItemFormats.Format,ItemPlatforms.Platform,ItemGenres.Genre,ItemCreators.Creator,ItemImages,UserItems";
 
-    /// <summary>Agregado UserItem con el Item y todas sus relaciones cargadas.</summary>
+    /// <summary>Agregado UserItem con el Item, sus relaciones y la copia propia (incluidos préstamos activos).</summary>
     public const string DesdeUserItem =
-        "Item.MediaType,Item.ItemFormats.Format,Item.ItemPlatforms.Platform,Item.ItemGenres.Genre,Item.ItemCreators.Creator,Item.ItemImages";
+        "Item.MediaType,Item.ItemFormats.Format,Item.ItemPlatforms.Platform,Item.ItemGenres.Genre,Item.ItemCreators.Creator,Item.ItemImages,UserItemFormats.Format,UserItemPlatforms.Platform,Prestamos";
 }

@@ -73,6 +73,23 @@ public class BibliotecaController : ControllerBase
     }
 
     /// <summary>
+    /// Obtener la entrada de biblioteca del usuario autenticado para un ítem del catálogo.
+    /// Devuelve 204 si el ítem aún no está en su biblioteca.
+    /// </summary>
+    [HttpGet("item/{itemId:guid}")]
+    [ProducesResponseType(typeof(RespuestaUserItemDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ObtenerItemDeBibliotecaPorItemId([FromRoute] Guid itemId,
+        CancellationToken cancellation)
+    {
+        Guid userId = ObtenerUserId();
+        RespuestaUserItemDto? resultado =
+            await _bibliotecaService.ObtenerItemDeBibliotecaPorItemId(userId, itemId, cancellation);
+
+        return resultado is null ? NoContent() : Ok(resultado);
+    }
+
+    /// <summary>
     /// Agregar un ítem a la biblioteca del usuario autenticado.
     /// </summary>
     [HttpPost]
@@ -142,6 +159,80 @@ public class BibliotecaController : ControllerBase
     {
         Guid userId = ObtenerUserId();
         await _bibliotecaService.Puntuar(userId, id, rating, cancellation);
+        return NoContent();
+    }
+
+    // ===== Préstamos =====
+
+    /// <summary>
+    /// Historial de préstamos de un título de la biblioteca.
+    /// </summary>
+    [HttpGet("{id:guid}/prestamos")]
+    [ProducesResponseType(typeof(IEnumerable<RespuestaPrestamoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ObtenerPrestamos([FromRoute] Guid id, CancellationToken cancellation)
+    {
+        Guid userId = ObtenerUserId();
+        IEnumerable<RespuestaPrestamoDto> prestamos =
+            await _bibliotecaService.ObtenerPrestamos(userId, id, cancellation);
+        return Ok(prestamos);
+    }
+
+    /// <summary>
+    /// Registrar el préstamo de un título a una persona.
+    /// </summary>
+    [HttpPost("{id:guid}/prestamos")]
+    [ProducesResponseType(typeof(RespuestaPrestamoDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> AgregarPrestamo([FromRoute] Guid id,
+        [FromBody] PeticionCrearPrestamoDto dto, CancellationToken cancellation)
+    {
+        Guid userId = ObtenerUserId();
+        RespuestaPrestamoDto resultado = await _bibliotecaService.AgregarPrestamo(userId, id, dto, cancellation);
+        return CreatedAtAction(nameof(ObtenerPrestamos), new { id }, resultado);
+    }
+
+    /// <summary>
+    /// Corregir persona/notas de un préstamo.
+    /// </summary>
+    [HttpPut("prestamos/{prestamoId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActualizarPrestamo([FromRoute] Guid prestamoId,
+        [FromBody] PeticionActualizarPrestamoDto dto, CancellationToken cancellation)
+    {
+        Guid userId = ObtenerUserId();
+        await _bibliotecaService.ActualizarPrestamo(userId, prestamoId, dto, cancellation);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Registrar la devolución de un préstamo. Sin fecha en el body se usa la fecha actual.
+    /// </summary>
+    [HttpPut("prestamos/{prestamoId:guid}/devolucion")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RegistrarDevolucion([FromRoute] Guid prestamoId,
+        CancellationToken cancellation)
+    {
+        Guid userId = ObtenerUserId();
+        await _bibliotecaService.RegistrarDevolucion(userId, prestamoId, cancellationToken: cancellation);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Eliminar un registro de préstamo.
+    /// </summary>
+    [HttpDelete("prestamos/{prestamoId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> EliminarPrestamo([FromRoute] Guid prestamoId, CancellationToken cancellation)
+    {
+        Guid userId = ObtenerUserId();
+        await _bibliotecaService.EliminarPrestamo(userId, prestamoId, cancellation);
         return NoContent();
     }
 

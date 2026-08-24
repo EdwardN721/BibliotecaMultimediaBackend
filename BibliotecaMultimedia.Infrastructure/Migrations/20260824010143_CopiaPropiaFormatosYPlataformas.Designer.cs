@@ -4,6 +4,7 @@ using System.Text.Json;
 using BibliotecaMultimedia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BibliotecaMultimedia.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260824010143_CopiaPropiaFormatosYPlataformas")]
+    partial class CopiaPropiaFormatosYPlataformas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -399,47 +402,6 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                         .HasFilter("\"DeletedAt\" IS NULL");
 
                     b.ToTable("platforms", (string)null);
-                });
-
-            modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.Prestamo", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset?>("FechaDevolucion")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("FechaPrestamo")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("NombrePersona")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<string>("Notas")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserItemId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserItemId");
-
-                    b.ToTable("prestamos", (string)null);
                 });
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.Role", b =>
@@ -911,17 +873,6 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
                     b.Navigation("Platform");
                 });
 
-            modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.Prestamo", b =>
-                {
-                    b.HasOne("BibliotecaMultimedia.Domain.Models.UserItem", "UserItem")
-                        .WithMany("Prestamos")
-                        .HasForeignKey("UserItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("UserItem");
-                });
-
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.UserItem", b =>
                 {
                     b.HasOne("BibliotecaMultimedia.Domain.Models.Item", "Item")
@@ -1057,8 +1008,6 @@ namespace BibliotecaMultimedia.Infrastructure.Migrations
 
             modelBuilder.Entity("BibliotecaMultimedia.Domain.Models.UserItem", b =>
                 {
-                    b.Navigation("Prestamos");
-
                     b.Navigation("UserItemFormats");
 
                     b.Navigation("UserItemPlatforms");

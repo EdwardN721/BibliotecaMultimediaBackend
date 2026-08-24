@@ -20,4 +20,13 @@ public class UserItem : BaseEntity
     public DateTimeOffset? StartedAt { get; set; }  
     public DateTimeOffset? FinishedAt { get; set; } 
     public bool IsPrivate { get; set; } = false;
+
+    /// <summary>Formatos en que el usuario posee este título.</summary>
+    public ICollection<UserItemFormat>? UserItemFormats { get; set; } = new List<UserItemFormat>();
+
+    /// <summary>Plataformas/consolas en que el usuario posee este título.</summary>
+    public ICollection<UserItemPlatform>? UserItemPlatforms { get; set; } = new List<UserItemPlatform>();
+
+    /// <summary>Historial de préstamos de este título (a quién se prestó y cuándo).</summary>
+    public ICollection<Prestamo>? Prestamos { get; set; } = new List<Prestamo>();
 }

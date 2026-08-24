@@ -23,6 +23,9 @@ public class UnitOfWork : IUnitOfWork
     private IGenericRepository<Platform>? _plataformas;
     private IGenericRepository<Role>? _roles;
     private IGenericRepository<UserItem>? _userItems;
+    private IGenericRepository<UserItemFormat>? _userItemsFormatos;
+    private IGenericRepository<UserItemPlatform>? _userItemsPlataformas;
+    private IGenericRepository<Prestamo>? _prestamos;
 
     public UnitOfWork(AppDbContext context)
     {
@@ -92,6 +95,21 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<UserItem> UserItems
     {
         get { return _userItems ??= new GenericRepository<UserItem>(_context); }
+    }
+
+    public IGenericRepository<UserItemFormat> ItemsUsuarioFormatos
+    {
+        get { return _userItemsFormatos ??= new GenericRepository<UserItemFormat>(_context); }
+    }
+
+    public IGenericRepository<UserItemPlatform> ItemsUsuarioPlataformas
+    {
+        get { return _userItemsPlataformas ??= new GenericRepository<UserItemPlatform>(_context); }
+    }
+
+    public IGenericRepository<Prestamo> Prestamos
+    {
+        get { return _prestamos ??= new GenericRepository<Prestamo>(_context); }
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
