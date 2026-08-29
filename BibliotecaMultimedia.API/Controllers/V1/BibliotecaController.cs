@@ -1,6 +1,6 @@
 using System.Security.Claims;
-using System.Text.Json;
 using Asp.Versioning;
+using BibliotecaMultimedia.API.Extensions;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Biblioteca;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Biblioteca;
@@ -40,9 +40,7 @@ public class BibliotecaController : ControllerBase
         RespuestaPaginada<RespuestaUserItemDto> resultado =
             await _bibliotecaService.ObtenerBibliotecaPaginado(userId, filtro, cancellation);
 
-        string metadataJson = JsonSerializer.Serialize(resultado.Metadata);
-        Response.Headers.Append("Access-Control-Expose-Headers", "X-Pagination");
-        Response.Headers.Append("X-Pagination", metadataJson);
+        PaginacionHeaderHelper.EscribirMetadataPaginacion(Response, resultado.Metadata);
 
         return Ok(resultado.Registros);
     }
@@ -139,11 +137,12 @@ public class BibliotecaController : ControllerBase
     [HttpPut("{id:guid}/favorito")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> MarcarFavorito([FromRoute] Guid id, [FromBody] bool isFavorite,
-        CancellationToken cancellation)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> MarcarFavorito([FromRoute] Guid id,
+        [FromBody] PeticionMarcarFavoritoDto dto, CancellationToken cancellation)
     {
         Guid userId = ObtenerUserId();
-        await _bibliotecaService.MarcarFavorito(userId, id, isFavorite, cancellation);
+        await _bibliotecaService.MarcarFavorito(userId, id, dto.IsFavorite, cancellation);
         return NoContent();
     }
 
@@ -154,11 +153,11 @@ public class BibliotecaController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Puntuar([FromRoute] Guid id, [FromBody] short rating,
-        CancellationToken cancellation)
+    public async Task<IActionResult> Puntuar([FromRoute] Guid id,
+        [FromBody] PeticionPuntuarDto dto, CancellationToken cancellation)
     {
         Guid userId = ObtenerUserId();
-        await _bibliotecaService.Puntuar(userId, id, rating, cancellation);
+        await _bibliotecaService.Puntuar(userId, id, dto.Rating, cancellation);
         return NoContent();
     }
 

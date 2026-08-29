@@ -94,12 +94,19 @@ public class BibliotecaService : IBibliotecaService
 
     public async Task<RespuestaBibliotecaStatsDto> ObtenerStats(Guid userId, CancellationToken cancellationToken = default)
     {
+        // Cargamos los préstamos del usuario junto con sus UserItem para evitar
+        // una segunda consulta agregada sobre toda la tabla de préstamos.
         List<UserItem> items = (await _unitOfWork.UserItems.FindAsync(
             u => u.UserId == userId,
             cancellationToken,
-            u => u.Item!.MediaType)).ToList();
+            u => u.Item!.MediaType,
+            u => u.Prestamos!)).ToList();
 
         var ratings = items.Where(i => i.PersonalRating.HasValue).Select(i => (double)i.PersonalRating!.Value).ToList();
+
+        int prestadosActivos = items
+            .SelectMany(u => u.Prestamos ?? new List<Prestamo>())
+            .Count(p => p.FechaDevolucion == null);
 
         RespuestaBibliotecaStatsDto stats = new RespuestaBibliotecaStatsDto
         {
@@ -111,11 +118,7 @@ public class BibliotecaService : IBibliotecaService
             Deseados = items.Count(i => i.Status == ConsumptionStatus.Deseado),
             Favoritos = items.Count(i => i.IsFavorite),
             RatingPromedio = ratings.Count == 0 ? 0 : Math.Round(ratings.Average() * 10) / 10,
-            PrestadosActivos = (await _unitOfWork.Prestamos.FindAsync(
-                p => p.UserItem != null
-                     && p.UserItem.UserId == userId
-                     && p.FechaDevolucion == null,
-                cancellationToken: cancellationToken)).Count(),
+            PrestadosActivos = prestadosActivos,
             PorMediaType = items
                 .Where(i => i.Item?.MediaType != null)
                 .GroupBy(i => new { i.Item!.MediaTypeId, i.Item.MediaType.Name })
@@ -238,20 +241,6 @@ public class BibliotecaService : IBibliotecaService
             p => p.UserItemId == userItemId,
             cancellationToken: cancellationToken))
             .OrderByDescending(p => p.FechaPrestamo)
-            .ToList();
-
-        return prestamos.MapToDto();
-    }
-
-    public async Task<IEnumerable<RespuestaPrestamoDto>> ObtenerPrestamosActivos(Guid userId,
-        CancellationToken cancellationToken = default)
-    {
-        List<Prestamo> prestamos = (await _unitOfWork.Prestamos.FindAsync(
-            p => p.UserItem != null
-                 && p.UserItem.UserId == userId
-                 && p.FechaDevolucion == null,
-            cancellationToken: cancellationToken))
-            .OrderBy(p => p.FechaPrestamo)
             .ToList();
 
         return prestamos.MapToDto();

@@ -1,7 +1,7 @@
 using Asp.Versioning;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using BibliotecaMultimedia.API.Extensions;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Creador;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Creador;
@@ -33,17 +33,14 @@ public class CreatorController : ControllerBase
     /// <returns>Respuesta páginada.</returns>
     [HttpGet("paginado")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(RespuestaPaginada<RespuestaCreadorDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<RespuestaCreadorDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ObtenerCreadoresPaginado([FromQuery] FiltroCreador filtroCreador,
         CancellationToken cancellation)
     {
         RespuestaPaginada<RespuestaCreadorDto> resultado = await _creadorService.ObtenerCreadoresPaginado(filtroCreador, cancellation);
-        
-        var metadataJson = JsonSerializer.Serialize(resultado.Metadata);
-        
-        Response.Headers.Append("Access-Control-Expose-Headers", "X-Pagination");
-        Response.Headers.Append("X-Pagination", metadataJson);
-        
+
+        PaginacionHeaderHelper.EscribirMetadataPaginacion(Response, resultado.Metadata);
+
         return Ok(resultado.Registros);
     }
     

@@ -26,9 +26,6 @@ public interface IBibliotecaService
     /// <summary>Historial de préstamos de un título de la biblioteca (más recientes primero).</summary>
     Task<IEnumerable<RespuestaPrestamoDto>> ObtenerPrestamos(Guid userId, Guid userItemId, CancellationToken cancellationToken = default);
 
-    /// <summary>Todos los préstamos activos del usuario (títulos que aún no le devuelven).</summary>
-    Task<IEnumerable<RespuestaPrestamoDto>> ObtenerPrestamosActivos(Guid userId, CancellationToken cancellationToken = default);
-
     /// <summary>Registra el préstamo de un título a una persona.</summary>
     Task<RespuestaPrestamoDto> AgregarPrestamo(Guid userId, Guid userItemId, PeticionCrearPrestamoDto dto, CancellationToken cancellationToken = default);
 

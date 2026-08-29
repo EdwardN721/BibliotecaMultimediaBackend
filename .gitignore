@@ -1,5 +1,6 @@
 .idea/*
 .vscode/*
+.opencode
 
 # Ignorar archivos de compilación
 bin/
@@ -8,3 +9,4 @@ obj/
 
 BibliotecaMultimedia.API/appsettings.json
 BibliotecaMultimedia.API/appsettings.Development.json
+

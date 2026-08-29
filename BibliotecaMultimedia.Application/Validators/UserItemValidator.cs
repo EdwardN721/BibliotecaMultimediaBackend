@@ -71,3 +71,20 @@ public class ActualizarUserItemValidator : AbstractValidator<PeticionActualizarU
             .When(x => x.OwnedPlatformIds is not null && x.OwnedPlatformIds.Count > 0);
     }
 }
+
+public class MarcarFavoritoValidator : AbstractValidator<PeticionMarcarFavoritoDto>
+{
+    public MarcarFavoritoValidator()
+    {
+        // Sin reglas por ahora: bool no requiere validación adicional.
+    }
+}
+
+public class PuntuarValidator : AbstractValidator<PeticionPuntuarDto>
+{
+    public PuntuarValidator()
+    {
+        RuleFor(x => x.Rating)
+            .InclusiveBetween((short)1, (short)5).WithMessage("La calificación debe estar entre 1 y 5.");
+    }
+}

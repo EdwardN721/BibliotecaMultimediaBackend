@@ -1,5 +1,5 @@
-using System.Text.Json;
 using Asp.Versioning;
+using BibliotecaMultimedia.API.Extensions;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Plataformas;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
@@ -33,17 +33,14 @@ public class PlatformController : ControllerBase
     /// <returns>Respuesta páginada.</returns>
     [HttpGet("paginado")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(RespuestaPaginada<RespuestaPlataformaDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<RespuestaPlataformaDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ObtenerPlataformasPaginadas([FromQuery] FiltroPlataforma filtroPlataforma,
         CancellationToken cancellation)
     {
         RespuestaPaginada<RespuestaPlataformaDto> resultado = await _plataformaService.ObtenerPlataformasPaginado(filtroPlataforma, cancellation);
-        
-        var metadataJson = JsonSerializer.Serialize(resultado.Metadata);
-        
-        Response.Headers.Append("Access-Control-Expose-Headers", "X-Pagination");
-        Response.Headers.Append("X-Pagination", metadataJson);
-        
+
+        PaginacionHeaderHelper.EscribirMetadataPaginacion(Response, resultado.Metadata);
+
         return Ok(resultado.Registros);
     }
 

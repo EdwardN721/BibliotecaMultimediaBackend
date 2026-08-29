@@ -8,7 +8,7 @@ public interface IGenericRepository<T> where T : BaseEntity
     Task<IEnumerable<T>> ObtenerTodosAsync(string? includeProperties = null, CancellationToken cancellationToken = default);
     Task<T?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<T?> GetFirstOrDefaultAsync(
+    Task<T?> GetFirstOrDefaultWithIncludesAsync(
         Expression<Func<T, bool>> predicate,
         CancellationToken cancellationToken = default,
         params Expression<Func<T, object>>[] includeProperties);
@@ -44,6 +44,16 @@ public interface IGenericRepository<T> where T : BaseEntity
         bool ordenDescendente = false);
 
     /// <summary>
+    /// Devuelve todos los registros proyectados y ordenados en la BD, sin paginar.
+    /// Evita materializar entidades completas (y colecciones pesadas como UserItems).
+    /// </summary>
+    Task<IEnumerable<TResult>> ObtenerTodosProyectadosAsync<TResult>(
+        Expression<Func<T, TResult>> selector,
+        string? ordenarPor = null,
+        bool ordenDescendente = false,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Cuenta registros agrupados por una clave, traducido a GROUP BY en la BD
     /// (evita traer todos los registros para agregarlos en memoria).
     /// </summary>
@@ -51,8 +61,6 @@ public interface IGenericRepository<T> where T : BaseEntity
         Expression<Func<T, TKey>> agruparPor,
         Expression<Func<T, bool>>? filtro = null,
         CancellationToken cancellationToken = default);
-
-    Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task AgregarAsync(T entity, CancellationToken cancellationToken = default);
     void Actualizar(T entity);

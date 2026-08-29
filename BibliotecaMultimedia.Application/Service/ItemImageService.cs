@@ -1,9 +1,5 @@
-using System.Linq.Expressions;
 using System.Text;
-using BibliotecaMultimedia.Application.DTOs.Peticion.Images;
-using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Imagenes;
-using BibliotecaMultimedia.Application.DTOs.Respuesta.Paginacion;
 using BibliotecaMultimedia.Application.Exceptions;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.Mappers;
@@ -45,51 +41,6 @@ public class ItemImageService : IItemImageService
         _blobStorageService = blobStorageService ?? throw new ArgumentNullException(nameof(blobStorageService));
     }
 
-    public async Task<RespuestaPaginada<RespuestaImagenDto>> ObtenerImagenesPaginados(FiltroImagen filtroImagen, CancellationToken cancellationToken = default)
-    {
-        Expression<Func<ItemImage, bool>>? filtro = null;
-
-        if (!string.IsNullOrEmpty(filtroImagen.TerminoBusqueda))
-        {
-            string termino = filtroImagen.TerminoBusqueda.ToLower();
-            filtro = i => i.ImageUrl.ToLower().Contains(termino);
-        }
-        
-        (IEnumerable<ItemImage> registros, int total) = await _unitOfWork.ImagenesItems.ObtenerPaginadosAsync(
-            filter: filtro,
-            pageNumber: filtroImagen.PageNumber,
-            pageSize: filtroImagen.PageSize,
-            includeProperties: null,
-            ordenarPor: filtroImagen.OrdenarPor,
-            ordenDescendente: filtroImagen.OrdenDescendente,
-            cancellationToken: cancellationToken);
-        
-        int totalPaginas = (int)Math.Ceiling(total / (double)filtroImagen.PageSize);
-        
-        RespuestaPaginada<RespuestaImagenDto> respuesta = registros 
-            .MapToDto()
-            .ToRespuestaPaginada(total, totalPaginas, filtroImagen.PageNumber, filtroImagen.PageSize);
-        
-        _logger.LogInformation("Imagenes paginadas: Página {Page} de {TotalPages} con {Count} registros", 
-            respuesta.Metadata.PaginaActual, respuesta.Metadata.TotalPaginas, respuesta.Registros.Count());
-        return respuesta;
-    }
-
-    public async Task<IEnumerable<RespuestaImagenDto>> ObtenerTodosAsync(CancellationToken cancellationToken = default)
-    {
-        List<ItemImage> imagenes = (await _unitOfWork.ImagenesItems.ObtenerTodosAsync(includeProperties: null, cancellationToken)).ToList();
-        
-        _logger.LogInformation("Imagenes obtenidas: {Count}", imagenes.Count);
-        return imagenes.MapToDto();
-    }
-
-    public async Task<RespuestaImagenDto> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        ItemImage imagen = await ObtenerItemImage(id, false, cancellationToken);
-
-        return imagen.MapToDto();
-    }
-
     public async Task<IEnumerable<RespuestaImagenDto>> ObtenerPorItemAsync(Guid itemId, CancellationToken cancellationToken = default)
     {
         List<ItemImage> imagenes = (await _unitOfWork.ImagenesItems.FindAsync(
@@ -103,28 +54,6 @@ public class ItemImageService : IItemImageService
 
         _logger.LogInformation("Imagenes obtenidas para el item {ItemId}: {Count}", itemId, imagenes.Count);
         return imagenes.MapToDto();
-    }
-
-    public async Task<RespuestaImagenDto> AgregarImagenAsync(PeticionAgregarImagenDto imagenDto, CancellationToken cancellationToken = default)
-    {
-        ItemImage imagen = imagenDto.MapToEntity();
-        
-        await _unitOfWork.ImagenesItems.AgregarAsync(imagen, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        
-        _logger.LogInformation("Imagen {Id} agregado", imagen.Id);
-        return imagen.MapToDto();
-    }
-
-    public async Task ActualizarImagenAsync(Guid id, PeticionActualizarImagenDto imagenDtoDto,
-        CancellationToken cancellationToken = default)
-    {
-        ItemImage imagen = await ObtenerItemImage(id, track: true, cancellationToken);
-        
-        imagen.UpdateEntity(imagenDtoDto);
-        
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Imagen con el Id: {Id} actualizado", imagen.Id);
     }
 
     public async Task EliminarImagenAsync(Guid id, CancellationToken cancellationToken = default)
@@ -198,10 +127,18 @@ public class ItemImageService : IItemImageService
             throw new BusinessRuleException($"El archivo excede el máximo de {MaximoChunksPorArchivo} fragmentos permitidos.");
         }
 
-        if (chunkStream.CanSeek && chunkStream.Length > TamanoMaximoChunkBytes)
+        // Copiamos el fragmento a memoria para validar su tamaño de forma fiable:
+        // un stream sin seek no permite conocer Length sin leerlo, y así el límite
+        // se aplica siempre (no solo cuando CanSeek es true).
+        await using MemoryStream buffer = new();
+        await chunkStream.CopyToAsync(buffer, cancellationToken);
+
+        if (buffer.Length > TamanoMaximoChunkBytes)
         {
             throw new BusinessRuleException($"El fragmento excede el tamaño máximo de {TamanoMaximoChunkBytes / (1024 * 1024)} MB.");
         }
+
+        buffer.Position = 0;
 
         string nombreSeguro = SanitizarFileName(fileName);
 
@@ -218,7 +155,7 @@ public class ItemImageService : IItemImageService
         string blobName = $"items/{itemId}/images/{nombreSeguro}";
         string blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(chunkIndex.ToString("d6")));
 
-        await _blobStorageService.SubirArchivosChunkAsync(blobName, blockId, chunkStream, cancellationToken);
+        await _blobStorageService.SubirArchivosChunkAsync(blobName, blockId, buffer, cancellationToken);
 
         if (chunkIndex == totalChunks - 1)
         {

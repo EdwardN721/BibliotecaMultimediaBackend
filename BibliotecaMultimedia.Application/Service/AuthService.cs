@@ -20,27 +20,21 @@ public class AuthService : IAuthService
     private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly IConfiguration _configuration;
-    private readonly IValidator<PeticionCrearUsuarioDto> _validator;
+    private readonly IValidator<PeticionActualizarUsuarioDto> _validatorPerfil;
 
-    public AuthService(UserManager<User> userManager, RoleManager<IdentityRole<Guid>> roleManager, IConfiguration configuration, IValidator<PeticionCrearUsuarioDto> validator)
+    public AuthService(UserManager<User> userManager, RoleManager<IdentityRole<Guid>> roleManager, IConfiguration configuration, IValidator<PeticionActualizarUsuarioDto> validatorPerfil)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
-        _validator = validator;
+        _validatorPerfil = validatorPerfil;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(PeticionCrearUsuarioDto peticion, CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(peticion);
-        if (!validationResult.IsValid)
-        {
-            throw new ValidationAppException(validationResult.Errors);
-        }
-
         User usuario = peticion.ToEntity();
 
-        // Cancelar si es neceseario
+        // Cancelar si es necesario
         cancellationToken.ThrowIfCancellationRequested();
 
         // Crear al usuario en Identity
@@ -60,7 +54,7 @@ public class AuthService : IAuthService
         }
         await _userManager.AddToRoleAsync(usuario, roleName);
 
-        // Generar Token y devolcer
+        // Generar Token y devolver
         string token = await GenerateTokenAsync(usuario);
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -105,6 +99,46 @@ public class AuthService : IAuthService
         };
     }
 
+
+    public async Task<RespuestaUsuarioDto> ObtenerPerfilAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        User? usuario = await _userManager.FindByIdAsync(userId.ToString());
+        if (usuario == null)
+        {
+            throw new NotFoundException($"No se encontró el usuario con Id {userId}.");
+        }
+
+        return usuario.MapToDto();
+    }
+
+    public async Task<RespuestaUsuarioDto> ActualizarPerfilAsync(Guid userId, PeticionActualizarUsuarioDto peticion, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var validationResult = await _validatorPerfil.ValidateAsync(peticion, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationAppException(validationResult.Errors);
+        }
+
+        User? usuario = await _userManager.FindByIdAsync(userId.ToString());
+        if (usuario == null)
+        {
+            throw new NotFoundException($"No se encontró el usuario con Id {userId}.");
+        }
+
+        usuario.UpdateEntity(peticion);
+
+        IdentityResult result = await _userManager.UpdateAsync(usuario);
+        if (!result.Succeeded)
+        {
+            throw new IdentityUserException(result.Errors);
+        }
+
+        return usuario.MapToDto();
+    }
 
     #region MetodosPrivados
 

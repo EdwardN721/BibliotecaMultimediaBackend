@@ -15,9 +15,12 @@ public class CreatorConfiguration: IEntityTypeConfiguration<Creator>
         builder.Property(c => c.Name)
             .IsRequired()
             .HasMaxLength(255);
+
+        builder.HasIndex(c => c.Name)
+            .IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
         
         builder.Property(c => c.Bio)
-            .HasColumnType("text")
             .HasMaxLength(1500)
             .HasDefaultValue("Sin Descripción.");
     }

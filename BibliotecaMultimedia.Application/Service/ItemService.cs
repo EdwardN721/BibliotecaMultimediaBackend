@@ -82,15 +82,17 @@ public class ItemService : IItemService
 
     public async Task<IEnumerable<RespuestaItemDto>> ObtenerItems(CancellationToken cancellationToken = default)
     {
-        List<Item> items = (await _unitOfWork.Items.ObtenerTodosAsync(
-            includeProperties: ItemIncludes.DesdeItem,
-            cancellationToken)).ToList();
+        // Proyección en BD (evita materializar UserItems y el grafo completo por ítem)
+        IEnumerable<ItemMapper.ProyeccionItemDto> proyecciones = await _unitOfWork.Items.ObtenerTodosProyectadosAsync(
+            ItemMapper.ProyeccionLista(),
+            ordenarPor: nameof(Item.Title),
+            ordenDescendente: false,
+            cancellationToken);
 
-        // Orden determinista: la BD no garantiza orden sin ORDER BY
-        items = items.OrderBy(i => i.Title).ThenBy(i => i.Id).ToList();
+        IEnumerable<RespuestaItemDto> items = proyecciones.MapProyeccionToDto();
 
-        _logger.LogInformation("Items obtenidos: {Count}", items.Count);
-        return items.MapToDto();
+        _logger.LogInformation("Items obtenidos: {Count}", items.Count());
+        return items;
     }
 
     public async Task<IEnumerable<RespuestaItemDto>> ObtenerDestacados(int cantidad, CancellationToken cancellationToken = default)
@@ -98,16 +100,16 @@ public class ItemService : IItemService
         if (cantidad < 1) cantidad = 1;
         if (cantidad > 50) cantidad = 50;
 
-        List<Item> items = (await _unitOfWork.Items.ObtenerTodosAsync(
-            includeProperties: ItemIncludes.DesdeItem,
-            cancellationToken)).ToList();
+        // Ordenación y Take en SQL: no se materializa el catálogo completo en memoria
+        (IEnumerable<ItemMapper.ProyeccionItemDto> registros, _) = await _unitOfWork.Items.ObtenerPaginadosProyectadosAsync(
+            selector: ItemMapper.ProyeccionLista(),
+            pageNumber: 1,
+            pageSize: cantidad,
+            ordenarPor: nameof(Item.CreatedAt),
+            ordenDescendente: true,
+            cancellationToken: cancellationToken);
 
-        // Novedades: los últimos agregados al catálogo. Orden determinista por CreatedAt + Id
-        IEnumerable<RespuestaItemDto> destacados = items
-            .OrderByDescending(i => i.CreatedAt)
-            .ThenByDescending(i => i.Id)
-            .Take(cantidad)
-            .MapToDto();
+        IEnumerable<RespuestaItemDto> destacados = registros.MapProyeccionToDto();
 
         _logger.LogInformation("Items destacados obtenidos: {Count}", destacados.Count());
         return destacados;
@@ -187,8 +189,8 @@ public class ItemService : IItemService
             }
 
             await _unitOfWork.Items.AgregarAsync(nuevoItem, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // CommitTransactionAsync ya ejecuta SaveChanges internamente (evita un save redundante).
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
             _logger.LogInformation("Item agregado: {Id} - {Nombre}", nuevoItem.Id, nuevoItem.Title);

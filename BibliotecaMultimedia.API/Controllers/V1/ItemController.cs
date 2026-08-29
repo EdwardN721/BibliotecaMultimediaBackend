@@ -1,8 +1,8 @@
 using Asp.Versioning;
-using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using BibliotecaMultimedia.API.Extensions;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Items;
 using BibliotecaMultimedia.Application.DTOs.Respuesta.Items;
@@ -39,12 +39,9 @@ public class ItemController : ControllerBase
         CancellationToken cancellation)
     {
         RespuestaPaginada<RespuestaItemDto> resultado = await _itemService.ObtenerItemsPaginado(filtroItem, cancellation);
-        
-        var metadataJson = JsonSerializer.Serialize(resultado.Metadata);
-        
-        Response.Headers.Append("Access-Control-Expose-Headers", "X-Pagination");
-        Response.Headers.Append("X-Pagination", metadataJson);
-        
+
+        PaginacionHeaderHelper.EscribirMetadataPaginacion(Response, resultado.Metadata);
+
         return Ok(resultado.Registros);
     }
 

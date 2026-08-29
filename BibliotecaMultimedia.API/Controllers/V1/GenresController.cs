@@ -1,7 +1,7 @@
-using System.Text.Json;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using BibliotecaMultimedia.API.Extensions;
 using BibliotecaMultimedia.Application.Interfaces;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Catalogos;
 using BibliotecaMultimedia.Application.DTOs.Peticion.Paginacion.Filtros;
@@ -33,17 +33,14 @@ public class GenresController : ControllerBase
     /// <returns>Respuesta páginada.</returns>
     [HttpGet("paginado")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(RespuestaPaginada<RespuestaGeneroDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<RespuestaGeneroDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ObtenerGeneroPaginado([FromQuery] FiltroGenero filtroGenero,
         CancellationToken cancellation)
     {
         RespuestaPaginada<RespuestaGeneroDto> resultado = await _generoService.ObtenerGenerosPaginados(filtroGenero, cancellation);
-        
-        var metadataJson = JsonSerializer.Serialize(resultado.Metadata);
-        
-        Response.Headers.Append("Access-Control-Expose-Headers", "X-Pagination");
-        Response.Headers.Append("X-Pagination", metadataJson);
-        
+
+        PaginacionHeaderHelper.EscribirMetadataPaginacion(Response, resultado.Metadata);
+
         return Ok(resultado.Registros);
     }
 

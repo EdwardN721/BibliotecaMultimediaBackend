@@ -15,7 +15,6 @@ public static class InfrastructureServiceExtension
     public static IServiceCollection AddInterceptors(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
-        services.AddScoped<UserSessionInterceptor>();
         services.AddScoped<AuditInterceptor>();
         
         return services;
@@ -25,11 +24,10 @@ public static class InfrastructureServiceExtension
     {
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
-            var interceptorUserSession = serviceProvider.GetService<UserSessionInterceptor>()!;
             var interceptorAudit = serviceProvider.GetService<AuditInterceptor>()!;
 
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
-                .AddInterceptors(interceptorUserSession, interceptorAudit);
+                .AddInterceptors(interceptorAudit);
         });
         
         return services;

@@ -20,7 +20,10 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
 
     public async Task<T?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
+        // Usamos FirstOrDefault y no FindAsync para que el query filter global
+        // de soft delete (DeletedAt == null) se aplique siempre, incluso si la
+        // entidad ya está siendo trackeada en el contexto (FindAsync la devolvería).
+        return await _dbSet.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
     public async Task<IEnumerable<T>> ObtenerTodosAsync(string? includeProperties = null,
@@ -125,6 +128,22 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return (registros, total);
     }
 
+    public async Task<IEnumerable<TResult>> ObtenerTodosProyectadosAsync<TResult>(
+        Expression<Func<T, TResult>> selector,
+        string? ordenarPor = null,
+        bool ordenDescendente = false,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<T> query = _dbSet.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(ordenarPor))
+        {
+            query = AplicarOrden(query, ordenarPor, ordenDescendente);
+        }
+
+        return await query.Select(selector).ToListAsync(cancellationToken);
+    }
+
     public async Task<List<(TKey Clave, int Cantidad)>> ContarAgrupadoAsync<TKey>(
         Expression<Func<T, TKey>> agruparPor,
         Expression<Func<T, bool>>? filtro = null,
@@ -145,7 +164,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return filas.Select(r => (r.Clave, r.Cantidad)).ToList();
     }
 
-    public async Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate,
+    public async Task<T?> GetFirstOrDefaultWithIncludesAsync(Expression<Func<T, bool>> predicate,
         CancellationToken cancellationToken = default,
         params Expression<Func<T, object>>[] includeProperties)
     {
@@ -159,7 +178,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return await query.FirstOrDefaultAsync(predicate, cancellationToken);
     }
 
-    // Soporta sub-niveles (ThenInclude) usando strings
     public async Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate,
         CancellationToken cancellationToken = default,
         string? includeProperties = null,
@@ -199,11 +217,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         }
 
         _dbSet.Remove(entity);
-    }
-
-    public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
     }
 
     #region MetodosPrivados
